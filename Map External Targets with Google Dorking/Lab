@@ -1,0 +1,534 @@
+Map External Targets with Google Dorking
+Objectives
+By the end of this lab, students will be able to:
+
+Apply advanced Google Dorking techniques for reconnaissance
+Utilize Certificate Transparency logs for subdomain enumeration
+Develop Python scripts for automated information gathering
+Understand ethical and legal boundaries of external reconnaissance
+Create systematic approaches to target mapping
+Prerequisites
+Basic Linux command line proficiency
+Fundamental networking concepts (DNS, subdomains, SSL/TLS)
+Python programming basics
+Understanding of web technologies and HTTP/HTTPS
+Knowledge of ethical hacking principles
+Lab Environment
+Your cloud machine includes:
+
+Python 3.x with pip
+curl and wget utilities
+Text editors (nano, vim)
+Web browser for manual verification
+Pre-installed networking tools
+Note: Click Start Lab to access your pre-configured environment.
+
+Task 1: Master Google Dorking Techniques
+Step 1: Create a Google Dork Reference
+Create a cheat sheet for common reconnaissance dorks:
+
+nano google_dorks.txt
+Add these essential operators:
+
+# Core Google Dork Operators
+site:        - Limit search to specific domain
+filetype:    - Search for specific file extensions
+inurl:       - Find terms in URLs
+intitle:     - Find terms in page titles
+intext:      - Find terms in page content
+cache:       - View cached pages
+Step 2: Practice Manual Dorking
+Test these queries in a web browser (replace example.com with authorized target):
+
+# Subdomain discovery
+site:*.example.com
+
+# Admin panels
+site:example.com inurl:admin OR inurl:login
+
+# Configuration files
+site:example.com filetype:xml OR filetype:conf OR filetype:ini
+
+# Directory listings
+site:example.com intitle:"index of"
+
+# Backup files
+site:example.com filetype:bak OR filetype:old
+Document findings:
+
+nano manual_dork_results.txt
+Step 3: Build Automated Dorking Script
+Create a Python script for automated dorking:
+
+nano google_dorker.py
+#!/usr/bin/env python3
+
+import requests
+import time
+import urllib.parse
+import sys
+from bs4 import BeautifulSoup
+import random
+
+class GoogleDorker:
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
+        })
+        
+    def search_google(self, query, num_results=10):
+        """
+        Perform Google search with given query.
+        
+        Args:
+            query: Search query string
+            num_results: Number of results to retrieve
+            
+        Returns:
+            List of dictionaries with title and URL
+        """
+        # TODO: Encode the query using urllib.parse.quote_plus
+        # TODO: Construct Google search URL
+        # TODO: Add random delay (1-3 seconds) to avoid rate limiting
+        # TODO: Make GET request and parse response
+        # TODO: Extract search results using BeautifulSoup
+        # TODO: Return list of results with title and URL
+        pass
+    
+    def dork_target(self, target_domain, dork_list):
+        """
+        Apply multiple dorks to target domain.
+        
+        Args:
+            target_domain: Domain to investigate
+            dork_list: Dictionary of dork names and queries
+            
+        Returns:
+            Dictionary of results for each dork
+        """
+        # TODO: Iterate through dork_list
+        # TODO: Replace "TARGET" placeholder with actual domain
+        # TODO: Call search_google for each dork
+        # TODO: Store and return all results
+        pass
+    
+    def save_results(self, results, filename):
+        """
+        Save results to text file.
+        
+        Args:
+            results: Dictionary of dork results
+            filename: Output file path
+        """
+        # TODO: Open file for writing
+        # TODO: Write formatted header
+        # TODO: Iterate through results and write to file
+        # TODO: Include dork name, titles, and URLs
+        pass
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 google_dorker.py <target_domain>")
+        sys.exit(1)
+    
+    target = sys.argv[1]
+    
+    # Define dork queries (TARGET will be replaced)
+    dorks = {
+        "Subdomains": "site:*.TARGET",
+        "Admin Panels": "site:TARGET inurl:admin OR inurl:login",
+        "Config Files": "site:TARGET filetype:xml OR filetype:conf",
+        "Login Pages": "site:TARGET \"login\" OR \"sign in\""
+    }
+    
+    # TODO: Create GoogleDorker instance
+    # TODO: Execute dork_target method
+    # TODO: Save results to file
+    # TODO: Print completion message
+
+if __name__ == "__main__":
+    main()
+Install dependencies:
+
+pip3 install requests beautifulsoup4
+chmod +x google_dorker.py
+Step 4: Execute Dorking Script
+Run on an authorized test domain:
+
+python3 google_dorker.py example.com
+Warning: Only test domains you own or have explicit written permission to test.
+
+Task 2: Leverage Certificate Transparency Logs
+Step 1: Understand Certificate Transparency
+Certificate Transparency (CT) logs record all SSL/TLS certificates issued for domains. The crt.sh service provides searchable access to these logs.
+
+Step 2: Manual crt.sh Exploration
+Test manual queries:
+
+# Query crt.sh API for subdomains
+curl -s "https://crt.sh/?q=%.example.com&output=json" | head -50
+
+# Parse JSON output
+curl -s "https://crt.sh/?q=%.example.com&output=json" | python3 -m json.tool | less
+Step 3: Build Subdomain Discovery Tool
+Create comprehensive subdomain hunter:
+
+nano subdomain_hunter.py
+#!/usr/bin/env python3
+
+import requests
+import json
+import sys
+import socket
+import concurrent.futures
+
+class SubdomainHunter:
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
+        })
+        
+    def search_crtsh(self, domain):
+        """
+        Search crt.sh for subdomains using Certificate Transparency logs.
+        
+        Args:
+            domain: Target domain
+            
+        Returns:
+            Set of discovered subdomains
+        """
+        # TODO: Construct crt.sh API URL with domain
+        # TODO: Make GET request with timeout
+        # TODO: Parse JSON response
+        # TODO: Extract name_value field from each certificate
+        # TODO: Handle multiple domains per certificate (split by \n)
+        # TODO: Remove wildcard prefixes (*.)
+        # TODO: Filter to only include target domain subdomains
+        # TODO: Return set of unique subdomains
+        pass
+    
+    def resolve_subdomain(self, subdomain):
+        """
+        Resolve subdomain to IP address.
+        
+        Args:
+            subdomain: Subdomain to resolve
+            
+        Returns:
+            Tuple of (subdomain, ip, success_boolean)
+        """
+        # TODO: Use socket.gethostbyname to resolve subdomain
+        # TODO: Handle socket.gaierror exception for failed resolution
+        # TODO: Return subdomain, IP, and success status
+        pass
+    
+    def check_http_status(self, subdomain):
+        """
+        Check HTTP/HTTPS status of subdomain.
+        
+        Args:
+            subdomain: Subdomain to check
+            
+        Returns:
+            Tuple of (subdomain, results_dict)
+        """
+        # TODO: Try both HTTPS and HTTP protocols
+        # TODO: Make GET request with timeout
+        # TODO: Extract status code, title, server header
+        # TODO: Handle exceptions and timeouts
+        # TODO: Return results dictionary
+        pass
+    
+    def analyze_subdomains(self, subdomains, max_workers=15):
+        """
+        Analyze subdomains for resolution and HTTP accessibility.
+        
+        Args:
+            subdomains: Set of subdomains to analyze
+            max_workers: Thread pool size
+            
+        Returns:
+            Tuple of (resolved_list, http_results_dict)
+        """
+        # TODO: Use ThreadPoolExecutor to resolve subdomains concurrently
+        # TODO: Collect successfully resolved subdomains
+        # TODO: Use ThreadPoolExecutor to check HTTP status
+        # TODO: Return resolved subdomains and HTTP results
+        pass
+    
+    def generate_report(self, domain, subdomains, resolved, http_results):
+        """
+        Generate comprehensive text report.
+        
+        Args:
+            domain: Target domain
+            subdomains: All discovered subdomains
+            resolved: List of resolved subdomains
+            http_results: HTTP analysis results
+        """
+        # TODO: Create report filename
+        # TODO: Write summary statistics
+        # TODO: List resolved subdomains with IPs
+        # TODO: Include HTTP analysis results
+        # TODO: Save complete subdomain list
+        pass
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 subdomain_hunter.py <domain>")
+        sys.exit(1)
+    
+    domain = sys.argv[1].lower().strip()
+    
+    # TODO: Create SubdomainHunter instance
+    # TODO: Search crt.sh for subdomains
+    # TODO: Analyze discovered subdomains
+    # TODO: Generate comprehensive report
+    # TODO: Print summary statistics
+
+if __name__ == "__main__":
+    main()
+Make executable:
+
+chmod +x subdomain_hunter.py
+Step 4: Execute Subdomain Discovery
+Run the tool:
+
+python3 subdomain_hunter.py example.com
+Review results:
+
+cat subdomain_report_example_com.txt
+cat subdomains_example_com.txt
+Task 3: Build Unified Reconnaissance Framework
+Step 1: Design Framework Architecture
+Create integrated reconnaissance tool combining multiple techniques:
+
+nano recon_framework.py
+#!/usr/bin/env python3
+
+import requests
+import json
+import sys
+import time
+import socket
+import concurrent.futures
+import argparse
+from datetime import datetime
+import os
+
+class ReconFramework:
+    def __init__(self, target_domain, output_dir="recon_results"):
+        self.target = target_domain.lower().strip()
+        self.output_dir = output_dir
+        self.session = requests.Session()
+        
+        # Create output directory
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+        
+        self.results = {
+            'target': self.target,
+            'timestamp': datetime.now().isoformat(),
+            'google_dorks': {},
+            'subdomains': {},
+            'summary': {}
+        }
+    
+    def log_message(self, message, level="INFO"):
+        """
+        Log messages with timestamp.
+        
+        Args:
+            message: Message to log
+            level: Log level (INFO, ERROR, WARNING)
+        """
+        # TODO: Format timestamp
+        # TODO: Print formatted log message
+        pass
+    
+    def google_dorking(self):
+        """
+        Execute comprehensive Google dorking campaign.
+        """
+        # TODO: Define dictionary of dork queries
+        # TODO: Iterate through dorks and execute searches
+        # TODO: Store results in self.results['google_dorks']
+        # TODO: Implement rate limiting between requests
+        pass
+    
+    def subdomain_discovery(self):
+        """
+        Perform subdomain discovery using multiple sources.
+        """
+        # TODO: Query crt.sh for subdomains
+        # TODO: Combine results from all sources
+        # TODO: Resolve discovered subdomains
+        # TODO: Check HTTP/HTTPS accessibility
+        # TODO: Store results in self.results['subdomains']
+        pass
+    
+    def search_crtsh(self):
+        """
+        Search Certificate Transparency logs.
+        
+        Returns:
+            List of discovered subdomains
+        """
+        # TODO: Query crt.sh API
+        # TODO: Parse JSON response
+        # TODO: Extract and clean subdomains
+        # TODO: Return list of unique subdomains
+        pass
+    
+    def analyze_subdomains(self, subdomains, max_workers=15):
+        """
+        Analyze subdomains concurrently.
+        
+        Args:
+            subdomains: Set of subdomains
+            max_workers: Thread pool size
+            
+        Returns:
+            Tuple of (resolved_list, http_results_dict)
+        """
+        # TODO: Resolve subdomains using ThreadPoolExecutor
+        # TODO: Check HTTP status for resolved subdomains
+        # TODO: Return analysis results
+        pass
+    
+    def generate_reports(self):
+        """
+        Generate comprehensive reports in multiple formats.
+        """
+        # TODO: Calculate summary statistics
+        # TODO: Generate text report
+        # TODO: Generate JSON report
+        # TODO: Generate subdomain list file
+        # TODO: Generate HTML report (optional)
+        pass
+    
+    def generate_text_report(self):
+        """
+        Create human-readable text report.
+        """
+        # TODO: Open output file
+        # TODO: Write executive summary
+        # TODO: Write Google dorking results
+        # TODO: Write subdomain discovery results
+        # TODO: Include HTTP analysis
+        pass
+    
+    def generate_json_report(self):
+        """
+        Create machine-readable JSON report.
+        """
+        # TODO: Save self.results as formatted JSON
+        pass
+    
+    def run_full_recon(self):
+        """
+        Execute complete reconnaissance workflow.
+        """
+        # TODO: Log start message
+        # TODO: Execute google_dorking()
+        # TODO: Execute subdomain_discovery()
+        # TODO: Generate all reports
+        # TODO: Log completion message
+        pass
+
+def main():
+    parser = argparse.ArgumentParser(description='Comprehensive Reconnaissance Framework')
+    parser.add_argument('target', help='Target domain')
+    parser.add_argument('-o', '--output', default='recon_results', help='Output directory')
+    parser.add_argument('--no-dorks', action='store_true', help='Skip Google dorking')
+    parser.add_argument('--no-subdomains', action='store_true', help='Skip subdomain discovery')
+    
+    args = parser.parse_args()
+    
+    # TODO: Create ReconFramework instance
+    # TODO: Execute selected reconnaissance modules
+    # TODO: Generate reports
+    # TODO: Print summary
+
+if __name__ == "__main__":
+    main()
+Make executable:
+
+chmod +x recon_framework.py
+Step 2: Execute Full Reconnaissance
+Run complete reconnaissance:
+
+python3 recon_framework.py example.com
+Run with options:
+
+# Skip Google dorking
+python3 recon_framework.py example.com --no-dorks
+
+# Custom output directory
+python3 recon_framework.py example.com -o custom_output
+Step 3: Analyze Results
+Review generated reports:
+
+# View text report
+cat recon_results/recon_report_example_com.txt
+
+# View JSON report
+cat recon_results/recon_report_example_com.json | python3 -m json.tool
+
+# Count discovered subdomains
+wc -l recon_results/subdomains_example_com.txt
+Expected Outcomes
+Upon completion, students should have:
+
+Created functional Google dorking automation scripts
+Developed subdomain discovery tools using Certificate Transparency
+Built integrated reconnaissance framework
+Generated comprehensive target intelligence reports
+Understanding of ethical reconnaissance boundaries
+Key Deliverables:
+
+google_dorker.py - Automated dorking tool
+subdomain_hunter.py - Subdomain discovery script
+recon_framework.py - Unified reconnaissance platform
+Multiple report files with discovered intelligence
+Troubleshooting Tips
+Issue: Google blocking automated requests
+
+Solution: Increase delays between requests (5-10 seconds)
+Use VPN or proxy rotation
+Consider using Google Custom Search API
+Issue: crt.sh API timeout or no results
+
+Solution: Check internet connectivity
+Verify domain has SSL certificates issued
+Try manual query at https://crt.sh to confirm service availability
+Issue: DNS resolution failures
+
+Solution: Check DNS server configuration
+Try alternative DNS servers (8.8.8.8, 1.1.1.1)
+Verify network connectivity
+Issue: HTTP connection timeouts
+
+Solution: Increase timeout values in requests
+Reduce concurrent thread count
+Check firewall rules
+Conclusion
+This lab provided hands-on experience with external reconnaissance techniques essential for penetration testing. Students learned to leverage Google Dorking for vulnerability discovery, utilize Certificate Transparency logs for subdomain enumeration, and automate reconnaissance workflows with Python.
+
+Key Takeaways:
+
+Google Dorking reveals publicly indexed sensitive information
+Certificate Transparency logs are valuable for subdomain discovery
+Automation significantly improves reconnaissance efficiency
+Always obtain proper authorization before testing external targets
+Ethical boundaries must be respected in all reconnaissance activities
+Next Steps:
+
+Explore additional OSINT data sources (Shodan, Censys)
+Integrate DNS enumeration techniques
+Study web application fingerprinting
+Learn about responsible disclosure practices
+Legal Reminder: Only perform reconnaissance on systems you own or have explicit written permission to test. Unauthorized access is illegal and unethical.
