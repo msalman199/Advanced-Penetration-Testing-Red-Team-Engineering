@@ -1,0 +1,577 @@
+Network Scanning with Nmap NSE and Masscan
+Objectives
+By the end of this lab, students will be able to:
+
+Execute advanced network reconnaissance using Nmap Scripting Engine (NSE)
+Perform high-speed port scanning with Masscan
+Automate scanning workflows using Python scripts
+Analyze and interpret scan results for security assessment
+Implement hybrid scanning strategies combining speed and detail
+Prerequisites
+Students should have:
+
+Basic Linux command line proficiency
+Understanding of TCP/IP networking and common ports
+Familiarity with basic Nmap commands
+Python 3 programming fundamentals
+Awareness of ethical hacking principles and legal boundaries
+Lab Environment
+Al Nafi provides pre-configured Linux cloud machines. Click Start Lab to access your environment with:
+
+Ubuntu Linux with Nmap, Masscan, and Python 3 pre-installed
+All necessary libraries and tools configured
+Text editors and development utilities
+Note: All scanning in this lab targets localhost (127.0.0.1) for safety and legality.
+
+Task 1: NSE Script Categories and Service Detection
+Step 1: Explore NSE Script Categories
+List and understand available NSE script categories:
+
+# View all NSE categories
+nmap --script-help all | grep "Categories:" | sort | uniq
+
+# Examine specific categories
+nmap --script-help vuln
+nmap --script-help discovery
+nmap --script-help auth
+
+# Create organized results directory
+mkdir -p ~/lab6_results/nse_scans
+Step 2: Perform Service Detection Scanning
+Execute comprehensive service detection:
+
+# Basic service version detection with default scripts
+nmap -sV -sC 127.0.0.1 -oA ~/lab6_results/nse_scans/service_scan
+
+# Detailed banner grabbing on common ports
+nmap --script=banner,ssh-hostkey,http-headers 127.0.0.1 -p 22,80,443 \
+  -oN ~/lab6_results/nse_scans/banner_scan.txt
+
+# HTTP service enumeration
+nmap --script=http-enum,http-methods,http-title 127.0.0.1 -p 80,443,8080 \
+  -oA ~/lab6_results/nse_scans/http_scan
+Step 3: Vulnerability Assessment with NSE
+Run vulnerability detection scripts:
+
+# General vulnerability scan
+nmap --script=vuln 127.0.0.1 -oA ~/lab6_results/nse_scans/vuln_scan
+
+# SSL/TLS specific checks
+nmap --script=ssl-enum-ciphers,ssl-cert,ssl-known-key 127.0.0.1 -p 443 \
+  -oN ~/lab6_results/nse_scans/ssl_scan.txt
+
+# Authentication testing (safe scripts only)
+nmap --script=auth 127.0.0.1 -p 21,22,23,25 \
+  -oA ~/lab6_results/nse_scans/auth_scan
+Step 4: Create Custom NSE Script
+Develop a basic custom NSE script for learning:
+
+# Create custom script directory
+mkdir -p ~/custom_nse
+
+# Create simple port banner script
+cat > ~/custom_nse/simple-banner.nse << 'EOF'
+local shortport = require "shortport"
+local stdnse = require "stdnse"
+
+description = [[
+Simple banner grabbing script for educational purposes.
+]]
+
+author = "Student"
+categories = {"discovery", "safe"}
+
+portrule = shortport.port_or_service({22, 80, 443})
+
+action = function(host, port)
+    -- TODO: Implement socket connection
+    -- TODO: Receive banner data
+    -- TODO: Format and return results
+    return "Banner grab implementation needed"
+end
+EOF
+
+# Test custom script
+nmap --script=~/custom_nse/simple-banner.nse 127.0.0.1 -p 22,80
+Task 2: High-Speed Scanning with Masscan
+Step 1: Basic Masscan Operations
+Understand Masscan syntax and perform initial scans:
+
+# Create Masscan results directory
+mkdir -p ~/lab6_results/masscan_scans
+
+# Scan common ports quickly
+sudo masscan 127.0.0.1 -p 1-1000 --rate=1000 \
+  -oX ~/lab6_results/masscan_scans/common_ports.xml
+
+# Scan specific service ports
+sudo masscan 127.0.0.1 -p 21,22,23,25,53,80,110,143,443,3306,5432 \
+  --rate=500 -oG ~/lab6_results/masscan_scans/services.gnmap
+
+# View results
+cat ~/lab6_results/masscan_scans/services.gnmap
+Step 2: Parse Masscan Results
+Create a Python parser for Masscan XML output:
+
+#!/usr/bin/env python3
+# File: masscan_parser.py
+
+import xml.etree.ElementTree as ET
+import sys
+from collections import defaultdict
+
+class MasscanParser:
+    def __init__(self, xml_file):
+        self.xml_file = xml_file
+        self.results = defaultdict(list)
+    
+    def parse_xml(self):
+        """
+        Parse Masscan XML output and extract host/port information.
+        
+        TODO: Implement XML parsing logic
+        TODO: Extract host addresses and port information
+        TODO: Store results in self.results dictionary
+        """
+        pass
+    
+    def generate_report(self):
+        """
+        Generate human-readable report from parsed results.
+        
+        TODO: Iterate through self.results
+        TODO: Format output with host and port information
+        TODO: Print summary statistics
+        """
+        pass
+    
+    def export_json(self, output_file):
+        """
+        Export results to JSON format.
+        
+        Args:
+            output_file: Path to output JSON file
+        
+        TODO: Convert results to JSON
+        TODO: Write to output file
+        """
+        pass
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python3 masscan_parser.py <xml_file>")
+        sys.exit(1)
+    
+    parser = MasscanParser(sys.argv[1])
+    # TODO: Call parsing and reporting methods
+Step 3: Implement Hybrid Scanning Strategy
+Combine Masscan's speed with Nmap's detail:
+
+#!/usr/bin/env python3
+# File: hybrid_scanner.py
+
+import subprocess
+import xml.etree.ElementTree as ET
+import os
+
+class HybridScanner:
+    def __init__(self, target, results_dir="~/lab6_results/hybrid"):
+        self.target = target
+        self.results_dir = os.path.expanduser(results_dir)
+        os.makedirs(self.results_dir, exist_ok=True)
+    
+    def masscan_discovery(self, port_range="1-1000"):
+        """
+        Phase 1: Use Masscan for rapid port discovery.
+        
+        Args:
+            port_range: Port range to scan
+        
+        Returns:
+            List of open ports
+        
+        TODO: Build masscan command
+        TODO: Execute scan using subprocess
+        TODO: Parse results and return open port list
+        """
+        pass
+    
+    def nmap_detailed_scan(self, ports):
+        """
+        Phase 2: Use Nmap for detailed scanning of discovered ports.
+        
+        Args:
+            ports: List of ports to scan in detail
+        
+        Returns:
+            Boolean indicating success
+        
+        TODO: Format port list for Nmap
+        TODO: Build nmap command with -sV -sC flags
+        TODO: Execute detailed scan
+        TODO: Save results to files
+        """
+        pass
+    
+    def run_hybrid_scan(self):
+        """
+        Execute complete hybrid scanning workflow.
+        
+        TODO: Call masscan_discovery()
+        TODO: Check if ports were found
+        TODO: Call nmap_detailed_scan() with discovered ports
+        TODO: Generate summary report
+        """
+        pass
+
+if __name__ == "__main__":
+    scanner = HybridScanner("127.0.0.1")
+    # TODO: Execute hybrid scan
+Task 3: Automated Scanning with Python
+Step 1: Create Scan Automation Framework
+Build a reusable scanning automation system:
+
+#!/usr/bin/env python3
+# File: scan_automation.py
+
+import subprocess
+import json
+import logging
+from datetime import datetime
+import os
+
+class ScanAutomation:
+    def __init__(self, config_file="scan_config.json"):
+        self.config_file = config_file
+        self.results_dir = "automated_scans"
+        self.setup_logging()
+        self.load_config()
+    
+    def setup_logging(self):
+        """
+        Configure logging for scan operations.
+        
+        TODO: Setup logging to file and console
+        TODO: Set appropriate log level and format
+        """
+        pass
+    
+    def load_config(self):
+        """
+        Load scanning configuration from JSON file.
+        
+        TODO: Read JSON configuration file
+        TODO: Handle missing file with default config
+        TODO: Validate configuration structure
+        """
+        pass
+    
+    def execute_nmap_scan(self, target, scan_type):
+        """
+        Execute Nmap scan based on scan type.
+        
+        Args:
+            target: Target IP or hostname
+            scan_type: Type of scan (quick, full, vuln)
+        
+        Returns:
+            Tuple of (success, output_file)
+        
+        TODO: Build nmap command based on scan_type
+        TODO: Execute scan with subprocess
+        TODO: Save results with timestamp
+        TODO: Return success status and output path
+        """
+        pass
+    
+    def execute_masscan_scan(self, target, port_range):
+        """
+        Execute Masscan scan.
+        
+        Args:
+            target: Target IP or hostname
+            port_range: Port range to scan
+        
+        Returns:
+            Tuple of (success, output_file)
+        
+        TODO: Build masscan command
+        TODO: Execute scan
+        TODO: Save and return results
+        """
+        pass
+    
+    def run_scan_suite(self, target):
+        """
+        Run complete suite of scans on target.
+        
+        Args:
+            target: Target to scan
+        
+        TODO: Execute multiple scan types
+        TODO: Collect all results
+        TODO: Generate summary report
+        """
+        pass
+
+if __name__ == "__main__":
+    # TODO: Initialize automation framework
+    # TODO: Run scan suite on localhost
+    pass
+Step 2: Create Scan Configuration
+Define scan parameters in JSON:
+
+{
+  "targets": ["127.0.0.1"],
+  "scan_types": {
+    "quick": {
+      "tool": "nmap",
+      "args": ["-sS", "-F", "-T4"],
+      "description": "Fast SYN scan of common ports"
+    },
+    "detailed": {
+      "tool": "nmap",
+      "args": ["-sV", "-sC", "-A"],
+      "description": "Comprehensive service detection"
+    },
+    "mass": {
+      "tool": "masscan",
+      "args": ["-p1-1000", "--rate=1000"],
+      "description": "High-speed port discovery"
+    }
+  },
+  "output_formats": ["xml", "nmap", "gnmap"]
+}
+Step 3: Implement Result Aggregation
+Create a system to aggregate and analyze multiple scan results:
+
+#!/usr/bin/env python3
+# File: result_aggregator.py
+
+import os
+import json
+import xml.etree.ElementTree as ET
+from collections import defaultdict
+import glob
+
+class ResultAggregator:
+    def __init__(self, base_dir="~/lab6_results"):
+        self.base_dir = os.path.expanduser(base_dir)
+        self.aggregated_data = defaultdict(list)
+    
+    def find_scan_files(self, file_pattern="*.xml"):
+        """
+        Locate all scan result files.
+        
+        Args:
+            file_pattern: Glob pattern for files
+        
+        Returns:
+            List of file paths
+        
+        TODO: Use glob to find matching files recursively
+        TODO: Filter by file type (nmap vs masscan)
+        TODO: Return sorted list of file paths
+        """
+        pass
+    
+    def parse_nmap_xml(self, xml_file):
+        """
+        Parse Nmap XML results.
+        
+        Args:
+            xml_file: Path to Nmap XML file
+        
+        Returns:
+            Dictionary with parsed data
+        
+        TODO: Parse XML structure
+        TODO: Extract host, port, and service information
+        TODO: Return structured data dictionary
+        """
+        pass
+    
+    def parse_masscan_xml(self, xml_file):
+        """
+        Parse Masscan XML results.
+        
+        Args:
+            xml_file: Path to Masscan XML file
+        
+        Returns:
+            Dictionary with parsed data
+        
+        TODO: Parse Masscan XML format
+        TODO: Extract host and port data
+        TODO: Return structured results
+        """
+        pass
+    
+    def generate_summary_report(self):
+        """
+        Generate comprehensive summary of all scans.
+        
+        TODO: Aggregate data from all parsed files
+        TODO: Calculate statistics (total hosts, ports, services)
+        TODO: Identify common findings across scans
+        TODO: Format and output summary report
+        """
+        pass
+    
+    def export_consolidated_results(self, output_file):
+        """
+        Export all results to single JSON file.
+        
+        Args:
+            output_file: Path to output JSON file
+        
+        TODO: Consolidate all scan data
+        TODO: Write to JSON with proper formatting
+        """
+        pass
+
+if __name__ == "__main__":
+    aggregator = ResultAggregator()
+    # TODO: Find all scan files
+    # TODO: Parse each file
+    # TODO: Generate and display summary report
+Task 4: Analysis and Reporting
+Step 1: Compare Scanning Techniques
+Create a comparison script:
+
+# Run comparison test
+cat > compare_scans.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Scanning Technique Comparison ==="
+echo ""
+
+# Nmap quick scan
+echo "Running Nmap quick scan..."
+time nmap -F 127.0.0.1 -oN nmap_quick.txt
+
+# Masscan equivalent
+echo "Running Masscan quick scan..."
+time sudo masscan 127.0.0.1 -p1-1000 --rate=1000 -oG masscan_quick.txt
+
+# Nmap detailed scan
+echo "Running Nmap detailed scan..."
+time nmap -sV -sC 127.0.0.1 -p 1-1000 -oN nmap_detailed.txt
+
+echo ""
+echo "Compare the timing and detail level of each approach."
+EOF
+
+chmod +x compare_scans.sh
+./compare_scans.sh
+Step 2: Generate Professional Report
+Create a report generator:
+
+#!/usr/bin/env python3
+# File: report_generator.py
+
+from datetime import datetime
+import json
+
+class ReportGenerator:
+    def __init__(self, scan_data):
+        self.scan_data = scan_data
+        self.report_date = datetime.now()
+    
+    def generate_executive_summary(self):
+        """
+        Create executive summary section.
+        
+        TODO: Summarize key findings
+        TODO: Highlight critical issues
+        TODO: Provide high-level statistics
+        """
+        pass
+    
+    def generate_technical_details(self):
+        """
+        Create detailed technical findings section.
+        
+        TODO: List all discovered hosts and ports
+        TODO: Document service versions
+        TODO: Include vulnerability findings
+        """
+        pass
+    
+    def generate_recommendations(self):
+        """
+        Create recommendations section.
+        
+        TODO: Analyze findings for security issues
+        TODO: Provide remediation recommendations
+        TODO: Prioritize by severity
+        """
+        pass
+    
+    def export_html_report(self, output_file):
+        """
+        Export report as HTML.
+        
+        Args:
+            output_file: Path to output HTML file
+        
+        TODO: Generate HTML structure
+        TODO: Include CSS styling
+        TODO: Add all report sections
+        TODO: Write to file
+        """
+        pass
+
+if __name__ == "__main__":
+    # TODO: Load scan data
+    # TODO: Generate report
+    # TODO: Export to HTML
+    pass
+Expected Outcomes
+After completing this lab, you should have:
+
+NSE Proficiency: Ability to use NSE scripts for detailed reconnaissance
+Masscan Skills: Experience with high-speed port scanning
+Automation Capability: Working Python scripts for scan automation
+Analysis Skills: Ability to parse and interpret scan results
+Hybrid Approach: Understanding of when to use each tool
+Deliverables:
+
+Completed scan result files in ~/lab6_results/
+Working Python automation scripts
+Custom NSE script
+Comparison analysis of scanning techniques
+Summary report of findings
+Troubleshooting Tips
+Issue: Masscan requires root privileges
+
+Solution: Use sudo with masscan commands or configure capabilities
+Issue: NSE scripts not found
+
+Solution: Update NSE database with nmap --script-updatedb
+Issue: Python scripts fail with import errors
+
+Solution: Install required packages: pip3 install schedule
+Issue: Scans timeout or hang
+
+Solution: Reduce scan rate, use smaller port ranges, or increase timeout values
+Issue: XML parsing errors
+
+Solution: Verify XML files are complete and well-formed; check for scan errors
+Conclusion
+This lab provided hands-on experience with advanced network scanning techniques using Nmap NSE and Masscan. You learned to leverage NSE scripts for detailed service enumeration, perform high-speed reconnaissance with Masscan, and automate scanning workflows with Python. The hybrid scanning approach combines the strengths of both tools for efficient and thorough network assessment.
+
+Key Takeaways:
+
+NSE scripts extend Nmap's capabilities for specialized reconnaissance
+Masscan excels at rapid port discovery across large networks
+Automation reduces manual effort and enables scheduled scanning
+Combining tools provides both speed and detail
+Proper result analysis is crucial for actionable intelligence
+Next Steps:
+
+Explore additional NSE script categories
+Practice on authorized test networks
+Integrate scanning into larger security assessment workflows
+Study defensive measures against reconnaissance techniques
+Remember: Always obtain proper authorization before scanning any network. Unauthorized scanning is illegal and unethical.
