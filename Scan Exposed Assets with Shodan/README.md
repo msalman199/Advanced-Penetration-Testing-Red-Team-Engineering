@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# 🔍 Internet-Wide Asset Discovery & Reconnaissance Lab
+# 🔍 Internet-Wide Asset Discovery & Reconnaissance 
 
 ### Learn OSINT, Asset Enumeration, Automation, and Security Analysis with Shodan
 
