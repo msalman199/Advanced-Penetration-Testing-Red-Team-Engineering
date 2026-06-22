@@ -1,0 +1,497 @@
+Scan Exposed Assets with Shodan
+Objectives
+By the end of this lab, students will be able to:
+
+Perform internet-wide asset discovery using Shodan search queries
+Automate reconnaissance processes using Python and Shodan API
+Analyze and export scan results for security assessments
+Apply ethical OSINT methodologies for asset enumeration
+Identify potentially vulnerable services and exposed systems
+Prerequisites
+Basic understanding of networking concepts (IP addresses, ports, protocols)
+Familiarity with Linux command line operations
+Basic Python programming knowledge
+Understanding of ethical hacking principles and legal considerations
+Lab Environment
+Al Nafi provides Linux-based cloud machines for this lab. Click Start Lab to access your pre-configured environment with all necessary tools installed.
+
+Task 1: Configure Shodan and Perform Basic Reconnaissance
+Step 1: Install Shodan Tools
+# Update system and install dependencies
+sudo apt update && sudo apt install python3 python3-pip -y
+
+# Install Shodan Python library
+pip3 install shodan pandas
+Step 2: Configure Shodan API
+Create a free account at https://www.shodan.io
+Navigate to your account page and copy your API key
+Initialize Shodan with your API key:
+shodan init YOUR_API_KEY_HERE
+
+# Verify installation
+shodan info
+Step 3: Perform Basic Command-Line Searches
+# Create working directory
+mkdir ~/shodan_lab && cd ~/shodan_lab
+
+# Search for Apache servers
+shodan search apache --limit 10
+
+# Search for specific ports
+shodan search port:22 --limit 10
+
+# Search by country
+shodan search "apache country:US" --limit 10
+
+# Search for specific services
+shodan search "product:nginx" --limit 10
+Step 4: Use Advanced Search Filters
+# Combine multiple filters
+shodan search "port:80 country:US city:NewYork"
+
+# Search for specific vulnerabilities
+shodan search "vuln:CVE-2014-0160"
+
+# Search by organization
+shodan search 'org:"Amazon"'
+
+# Search for specific service versions
+shodan search "OpenSSH 7.4" port:22
+Step 5: Retrieve Host Information
+# Get detailed information about a specific IP
+shodan host 8.8.8.8
+
+# Download search results to file
+shodan search apache --limit 50 > apache_results.txt
+Task 2: Automate Asset Discovery with Python
+Step 1: Create Basic Shodan Scanner Class
+Create a file named shodan_scanner.py:
+
+#!/usr/bin/env python3
+"""
+Shodan Asset Discovery Scanner
+Students: Complete the TODO sections to implement full functionality
+"""
+
+import shodan
+import json
+import csv
+from datetime import datetime
+
+class ShodanScanner:
+    def __init__(self, api_key):
+        """
+        Initialize Shodan scanner with API key
+        
+        Args:
+            api_key: Your Shodan API key
+        """
+        self.api = shodan.Shodan(api_key)
+        self.results = []
+    
+    def search_assets(self, query, limit=100):
+        """
+        Search for assets using Shodan API
+        
+        Args:
+            query: Shodan search query string
+            limit: Maximum number of results to return
+            
+        Returns:
+            List of asset dictionaries
+        """
+        try:
+            print(f"[+] Searching for: {query}")
+            # TODO: Implement API search call
+            # TODO: Iterate through results['matches']
+            # TODO: Extract relevant fields (ip, port, service, etc.)
+            # TODO: Append to self.results list
+            # TODO: Return the results
+            pass
+            
+        except shodan.APIError as e:
+            print(f"[-] Error: {e}")
+            return []
+    
+    def get_host_info(self, ip):
+        """
+        Get detailed information about a specific host
+        
+        Args:
+            ip: IP address to query
+            
+        Returns:
+            Host information dictionary
+        """
+        # TODO: Implement host lookup using self.api.host()
+        # TODO: Handle exceptions appropriately
+        # TODO: Return host information
+        pass
+    
+    def save_to_json(self, filename):
+        """
+        Save results to JSON file
+        
+        Args:
+            filename: Output filename
+        """
+        # TODO: Implement JSON export
+        pass
+    
+    def save_to_csv(self, filename):
+        """
+        Save results to CSV file
+        
+        Args:
+            filename: Output filename
+        """
+        # TODO: Implement CSV export using csv.DictWriter
+        pass
+Step 2: Create Main Discovery Script
+Create a file named asset_discovery.py:
+
+#!/usr/bin/env python3
+"""
+Automated Asset Discovery Tool
+Students: Complete the implementation
+"""
+
+import time
+from shodan_scanner import ShodanScanner
+
+def main():
+    # Configuration
+    API_KEY = "YOUR_API_KEY_HERE"  # Replace with your actual key
+    
+    # Initialize scanner
+    scanner = ShodanScanner(API_KEY)
+    
+    # Define search queries
+    queries = [
+        "apache",
+        "nginx",
+        "port:22",
+        "Microsoft-IIS"
+    ]
+    
+    # TODO: Loop through queries
+    # TODO: Call scanner.search_assets() for each query
+    # TODO: Implement rate limiting (time.sleep)
+    # TODO: Remove duplicate results based on IP+port
+    # TODO: Save results to JSON and CSV
+    # TODO: Print summary statistics
+    
+    print("[+] Discovery complete")
+
+if __name__ == "__main__":
+    main()
+Step 3: Create Advanced Analysis Script
+Create a file named analyze_results.py:
+
+#!/usr/bin/env python3
+"""
+Shodan Results Analysis Tool
+Students: Implement analysis functions
+"""
+
+import json
+import pandas as pd
+from collections import Counter
+
+class ResultAnalyzer:
+    def __init__(self, results_file):
+        """
+        Initialize analyzer with results file
+        
+        Args:
+            results_file: Path to JSON results file
+        """
+        # TODO: Load JSON data
+        # TODO: Create pandas DataFrame
+        pass
+    
+    def generate_summary(self):
+        """
+        Generate summary statistics
+        
+        Returns:
+            Dictionary with summary information
+        """
+        # TODO: Calculate total assets
+        # TODO: Count unique IPs
+        # TODO: Count unique countries
+        # TODO: Identify top services
+        # TODO: Identify top ports
+        # TODO: Return summary dictionary
+        pass
+    
+    def identify_vulnerable_services(self):
+        """
+        Identify potentially vulnerable services
+        
+        Returns:
+            List of high-risk assets
+        """
+        # TODO: Define vulnerable ports (21, 23, 445, etc.)
+        # TODO: Filter results for these ports
+        # TODO: Check for old software versions
+        # TODO: Return list of vulnerable assets
+        pass
+    
+    def export_report(self, output_file):
+        """
+        Export analysis report
+        
+        Args:
+            output_file: Output filename
+        """
+        # TODO: Generate comprehensive report
+        # TODO: Include summary statistics
+        # TODO: Include vulnerability findings
+        # TODO: Save to file
+        pass
+
+def main():
+    # TODO: Parse command line arguments
+    # TODO: Initialize analyzer
+    # TODO: Generate summary
+    # TODO: Identify vulnerabilities
+    # TODO: Export report
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 4: Test Your Implementation
+# Make scripts executable
+chmod +x shodan_scanner.py asset_discovery.py analyze_results.py
+
+# Run asset discovery
+python3 asset_discovery.py
+
+# Analyze results
+python3 analyze_results.py results.json
+Task 3: Export and Analyze Scan Results
+Step 1: Create Enhanced Export Script
+Create a file named export_results.py:
+
+#!/usr/bin/env python3
+"""
+Enhanced Results Export Tool
+Students: Implement export functionality
+"""
+
+import json
+import csv
+import pandas as pd
+from datetime import datetime
+
+class ResultsExporter:
+    def __init__(self, results_data):
+        """
+        Initialize exporter with results data
+        
+        Args:
+            results_data: List of asset dictionaries
+        """
+        self.data = results_data
+        self.df = pd.DataFrame(results_data)
+    
+    def export_to_csv(self, filename):
+        """
+        Export results to CSV with risk scoring
+        
+        Args:
+            filename: Output CSV filename
+        """
+        # TODO: Add risk_score column based on port/service
+        # TODO: Add risk_category column (High/Medium/Low)
+        # TODO: Export to CSV
+        pass
+    
+    def export_to_excel(self, filename):
+        """
+        Export results to Excel with multiple sheets
+        
+        Args:
+            filename: Output Excel filename
+        """
+        # TODO: Create main results sheet
+        # TODO: Create services summary sheet
+        # TODO: Create countries summary sheet
+        # TODO: Create high-risk assets sheet
+        # TODO: Save Excel file
+        pass
+    
+    def export_to_html(self, filename):
+        """
+        Export results to HTML report
+        
+        Args:
+            filename: Output HTML filename
+        """
+        # TODO: Generate HTML table from DataFrame
+        # TODO: Add styling and formatting
+        # TODO: Include summary statistics
+        # TODO: Save HTML file
+        pass
+    
+    def calculate_risk_score(self, row):
+        """
+        Calculate risk score for an asset
+        
+        Args:
+            row: DataFrame row with asset data
+            
+        Returns:
+            Integer risk score (1-5)
+        """
+        # TODO: Define high-risk ports
+        # TODO: Check for vulnerable versions
+        # TODO: Calculate and return score
+        pass
+
+def main():
+    # TODO: Load results from JSON
+    # TODO: Initialize exporter
+    # TODO: Export to multiple formats
+    # TODO: Print completion message
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 2: Create Visualization Script
+Create a file named visualize_results.py:
+
+#!/usr/bin/env python3
+"""
+Results Visualization Tool
+Students: Implement visualization functions
+"""
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import json
+
+def create_service_chart(df, output_file):
+    """
+    Create bar chart of top services
+    
+    Args:
+        df: DataFrame with results
+        output_file: Output image filename
+    """
+    # TODO: Count services
+    # TODO: Get top 10
+    # TODO: Create bar chart
+    # TODO: Save figure
+    pass
+
+def create_country_chart(df, output_file):
+    """
+    Create pie chart of countries
+    
+    Args:
+        df: DataFrame with results
+        output_file: Output image filename
+    """
+    # TODO: Count countries
+    # TODO: Get top 10
+    # TODO: Create pie chart
+    # TODO: Save figure
+    pass
+
+def create_port_chart(df, output_file):
+    """
+    Create horizontal bar chart of ports
+    
+    Args:
+        df: DataFrame with results
+        output_file: Output image filename
+    """
+    # TODO: Count ports
+    # TODO: Get top 15
+    # TODO: Create horizontal bar chart
+    # TODO: Save figure
+    pass
+
+def main():
+    # TODO: Load results
+    # TODO: Create DataFrame
+    # TODO: Generate all charts
+    # TODO: Print completion message
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3: Run Complete Analysis Pipeline
+# Run discovery
+python3 asset_discovery.py
+
+# Analyze results
+python3 analyze_results.py results.json
+
+# Export in multiple formats
+python3 export_results.py results.json
+
+# Create visualizations
+python3 visualize_results.py results.json
+
+# View generated files
+ls -lh *.csv *.xlsx *.html *.png
+Expected Outcomes
+After completing this lab, you should have:
+
+Successfully configured Shodan CLI and API access
+Performed manual reconnaissance using Shodan search queries
+Created automated Python scripts for asset discovery
+Implemented result analysis and risk scoring functionality
+Exported results in multiple formats (JSON, CSV, Excel, HTML)
+Generated visualization charts for discovered assets
+Identified potentially vulnerable services and exposed systems
+Your output files should include:
+
+results.json - Raw discovery results
+results.csv - Tabular results with risk scores
+analysis_report.txt - Summary statistics and findings
+results.xlsx - Multi-sheet Excel workbook
+Service/country/port distribution charts
+Troubleshooting Tips
+API Rate Limiting Issues:
+
+Free Shodan accounts have query limits (typically 100 queries/month)
+Implement time.sleep(1) between queries to avoid rate limiting
+Use --limit parameter to reduce results per query
+Check remaining credits with shodan info
+Import Errors:
+
+Ensure all required libraries are installed: pip3 install shodan pandas matplotlib openpyxl
+Use python3 instead of python on Linux systems
+Verify Python version is 3.6 or higher: python3 --version
+Empty Results:
+
+Verify API key is correctly configured: shodan info
+Check internet connectivity and firewall settings
+Ensure search queries are properly formatted
+Try simpler queries first (e.g., just "apache")
+Permission Errors:
+
+Make scripts executable: chmod +x script_name.py
+Ensure write permissions in working directory
+Run with appropriate user privileges (avoid unnecessary sudo)
+Conclusion
+This lab introduced internet-wide asset discovery using Shodan, a powerful search engine for internet-connected devices. You learned to perform manual reconnaissance using Shodan's search syntax, automate discovery processes with Python scripts, and analyze results to identify potentially vulnerable services.
+
+Key takeaways:
+
+Shodan enables passive reconnaissance of exposed internet assets
+Automation significantly improves efficiency of asset discovery
+Proper analysis and risk scoring helps prioritize security findings
+Multiple export formats facilitate integration with other security tools
+Always conduct reconnaissance ethically and within legal boundaries
+Important Ethical Considerations:
+
+Only scan systems you have explicit permission to test
+Shodan data is publicly available but use responsibly
+Follow responsible disclosure practices for vulnerabilities
+Respect privacy and legal boundaries in all reconnaissance activities
+Continue practicing with different search queries and expanding your automation scripts to build comprehensive asset discovery capabilities for professional security assessments.
