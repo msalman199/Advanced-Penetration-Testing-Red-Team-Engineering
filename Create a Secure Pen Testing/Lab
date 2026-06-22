@@ -1,0 +1,497 @@
+ Create a Secure Pen Testing Lab
+Objectives
+By the end of this lab, students will be able to:
+
+Configure pfSense as a network firewall and security gateway
+Set up and configure Kali Linux for penetration testing activities
+Install and configure Metasploit Framework for security testing
+Verify network connectivity and security configurations
+Understand the fundamentals of a secure penetration testing environment
+Implement network segmentation using virtualization technologies
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Linux command line operations
+Fundamental knowledge of networking concepts (IP addressing, subnets, routing)
+Familiarity with virtualization concepts
+Basic understanding of cybersecurity principles
+Access to Al Nafi cloud-based Linux machine (provided - just click Start Lab)
+Lab Environment Setup
+Important Note: Al Nafi provides ready-to-use Linux-based cloud machines. Simply click Start Lab to begin - no need to build your own virtual machine. All tasks in this lab will be performed on a single Linux machine using containerization and virtualization technologies.
+
+Task 1: Configure pfSense as a Firewall
+Subtask 1.1: Install Required Virtualization Tools
+First, we need to install the necessary tools to run pfSense in a virtualized environment on our Linux machine.
+
+# Update the system packages
+sudo apt update && sudo apt upgrade -y
+
+# Install QEMU/KVM virtualization tools
+sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+
+# Install additional networking tools
+sudo apt install -y openvswitch-switch openvswitch-common
+
+# Add current user to libvirt group
+sudo usermod -a -G libvirt $USER
+
+# Start and enable libvirt service
+sudo systemctl start libvirtd
+sudo systemctl enable libvirtd
+Subtask 1.2: Download pfSense ISO
+Download the pfSense Community Edition ISO file:
+
+# Create directory for ISO files
+mkdir -p ~/lab-isos
+cd ~/lab-isos
+
+# Download pfSense CE ISO (latest stable version)
+wget https://frafiles.netgate.com/mirror/downloads/pfSense-CE-2.7.2-RELEASE-amd64.iso.gz
+
+# Extract the ISO file
+gunzip pfSense-CE-2.7.2-RELEASE-amd64.iso.gz
+Subtask 1.3: Create pfSense Virtual Machine
+Create a virtual machine for pfSense using command line tools:
+
+# Create disk image for pfSense
+qemu-img create -f qcow2 ~/lab-isos/pfsense.qcow2 20G
+
+# Create pfSense VM with specific network configuration
+virt-install \
+  --name pfsense \
+  --ram 2048 \
+  --disk path=~/lab-isos/pfsense.qcow2,size=20 \
+  --vcpus 2 \
+  --os-type linux \
+  --os-variant freebsd12.0 \
+  --network bridge=virbr0 \
+  --network bridge=virbr0 \
+  --graphics vnc,listen=0.0.0.0 \
+  --console pty,target_type=serial \
+  --cdrom ~/lab-isos/pfSense-CE-2.7.2-RELEASE-amd64.iso \
+  --boot cdrom
+Subtask 1.4: Install and Configure pfSense
+Access the pfSense VM console:
+
+# Connect to pfSense VM console
+virsh console pfsense
+Installation Steps:
+
+When pfSense boots, select Install pfSense
+Choose Auto (UFS) for disk partitioning
+Wait for installation to complete
+Remove installation media and reboot
+Accept default interface assignments (WAN: em0, LAN: em1)
+Initial Configuration:
+
+# After pfSense boots, configure interfaces
+# At pfSense console menu, select option 2 (Set interface(s) IP address)
+
+# Configure LAN interface:
+# - Select LAN interface (2)
+# - Set IP address: 192.168.100.1
+# - Set subnet mask: 24
+# - Press Enter for no upstream gateway
+# - Press Enter for no IPv6
+# - Enable DHCP server: y
+# - DHCP range start: 192.168.100.10
+# - DHCP range end: 192.168.100.50
+# - Revert to HTTP for webConfigurator: y
+Subtask 1.5: Access pfSense Web Interface
+Create a script to access pfSense web interface:
+
+# Create script to connect to pfSense web interface
+cat > ~/connect-pfsense.sh << 'EOF'
+#!/bin/bash
+echo "pfSense Web Interface Access"
+echo "Default credentials:"
+echo "Username: admin"
+echo "Password: pfsense"
+echo "URL: http://192.168.100.1"
+echo ""
+echo "Opening web browser..."
+firefox http://192.168.100.1 &
+EOF
+
+chmod +x ~/connect-pfsense.sh
+Task 2: Set up Kali Linux for Testing
+Subtask 2.1: Install Kali Linux Tools on Host System
+Instead of creating another VM, we'll install Kali Linux tools directly on our host system:
+
+# Add Kali Linux repository
+echo "deb http://http.kali.org/kali kali-rolling main non-free contrib" | sudo tee /etc/apt/sources.list.d/kali.list
+
+# Add Kali Linux GPG key
+wget -q -O - https://archive.kali.org/archive-key.asc | sudo apt-key add -
+
+# Update package lists
+sudo apt update
+
+# Install essential Kali Linux tools
+sudo apt install -y kali-linux-core kali-tools-top10
+
+# Install additional penetration testing tools
+sudo apt install -y nmap nikto sqlmap dirb gobuster hydra john hashcat
+Subtask 2.2: Configure Network Interface for Testing
+Create a virtual network interface for testing:
+
+# Create virtual network interface script
+cat > ~/setup-test-interface.sh << 'EOF'
+#!/bin/bash
+
+# Create virtual network interface
+sudo ip link add name veth-test type veth peer name veth-test-peer
+
+# Configure IP addresses
+sudo ip addr add 192.168.100.100/24 dev veth-test
+sudo ip addr add 192.168.100.101/24 dev veth-test-peer
+
+# Bring interfaces up
+sudo ip link set veth-test up
+sudo ip link set veth-test-peer up
+
+# Add route to pfSense network
+sudo ip route add 192.168.100.0/24 dev veth-test
+
+echo "Virtual test interface configured successfully"
+echo "Test interface IP: 192.168.100.100"
+echo "Peer interface IP: 192.168.100.101"
+EOF
+
+chmod +x ~/setup-test-interface.sh
+./setup-test-interface.sh
+Subtask 2.3: Create Kali Linux Testing Environment
+Set up a dedicated directory structure for penetration testing:
+
+# Create penetration testing directory structure
+mkdir -p ~/pentest-lab/{scripts,results,targets,tools}
+
+# Create target discovery script
+cat > ~/pentest-lab/scripts/discover-targets.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Network Discovery Script ==="
+echo "Scanning local network for active hosts..."
+
+# Discover active hosts on the network
+nmap -sn 192.168.100.0/24 | tee ~/pentest-lab/results/host-discovery.txt
+
+echo ""
+echo "=== Port Scanning ==="
+echo "Scanning pfSense firewall..."
+
+# Scan pfSense firewall
+nmap -sS -O 192.168.100.1 | tee ~/pentest-lab/results/pfsense-scan.txt
+
+echo ""
+echo "Results saved to ~/pentest-lab/results/"
+EOF
+
+chmod +x ~/pentest-lab/scripts/discover-targets.sh
+Subtask 2.4: Configure Testing Tools
+Create configuration files for common testing tools:
+
+# Create Nmap configuration
+cat > ~/pentest-lab/tools/nmap-config.txt << 'EOF'
+# Common Nmap Commands for Lab Testing
+
+# Basic host discovery
+nmap -sn 192.168.100.0/24
+
+# TCP SYN scan
+nmap -sS 192.168.100.1
+
+# Service version detection
+nmap -sV 192.168.100.1
+
+# OS detection
+nmap -O 192.168.100.1
+
+# Comprehensive scan
+nmap -A 192.168.100.1
+EOF
+
+# Create Nikto configuration
+cat > ~/pentest-lab/tools/nikto-config.txt << 'EOF'
+# Nikto Web Vulnerability Scanner Commands
+
+# Basic web server scan
+nikto -h http://192.168.100.1
+
+# Scan with specific port
+nikto -h http://192.168.100.1:80
+
+# Save results to file
+nikto -h http://192.168.100.1 -o ~/pentest-lab/results/nikto-results.txt
+EOF
+Task 3: Use Metasploit to Verify Lab Connectivity
+Subtask 3.1: Install and Configure Metasploit Framework
+Install Metasploit Framework on the host system:
+
+# Install Metasploit dependencies
+sudo apt install -y curl wget gnupg2 software-properties-common
+
+# Download and install Metasploit
+curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > msfinstall
+chmod 755 msfinstall
+sudo ./msfinstall
+
+# Initialize Metasploit database
+sudo msfdb init
+
+# Start PostgreSQL service
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+Subtask 3.2: Create Metasploit Testing Scripts
+Create scripts to test lab connectivity using Metasploit:
+
+# Create Metasploit connectivity test script
+cat > ~/pentest-lab/scripts/metasploit-connectivity-test.rb << 'EOF'
+#!/usr/bin/env ruby
+
+# Metasploit connectivity test script
+require 'msf/core'
+
+framework = Msf::Simple::Framework.create
+
+# Test 1: Port scanner module
+puts "=== Testing Metasploit Connectivity ==="
+puts "Running port scanner against pfSense..."
+
+scanner = framework.modules.create('auxiliary/scanner/portscan/tcp')
+scanner.datastore['RHOSTS'] = '192.168.100.1'
+scanner.datastore['PORTS'] = '22,80,443'
+
+scanner.run_simple(
+  'LocalInput' => Rex::Ui::Text::Input::Stdio.new,
+  'LocalOutput' => Rex::Ui::Text::Output::Stdio.new
+)
+
+puts "Connectivity test completed."
+EOF
+
+# Create Metasploit console script
+cat > ~/pentest-lab/scripts/msfconsole-test.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Metasploit Framework Connectivity Test ==="
+echo "Starting Metasploit console with automated commands..."
+
+# Create resource script for automated testing
+cat > /tmp/msf-test.rc << 'MSFEOF'
+use auxiliary/scanner/portscan/tcp
+set RHOSTS 192.168.100.1
+set PORTS 22,80,443,8080
+run
+
+use auxiliary/scanner/http/http_version
+set RHOSTS 192.168.100.1
+run
+
+exit
+MSFEOF
+
+# Run Metasploit with resource script
+msfconsole -r /tmp/msf-test.rc
+
+echo "Metasploit connectivity test completed."
+EOF
+
+chmod +x ~/pentest-lab/scripts/msfconsole-test.sh
+Subtask 3.3: Verify Lab Connectivity
+Create a comprehensive connectivity verification script:
+
+# Create comprehensive lab verification script
+cat > ~/pentest-lab/scripts/verify-lab-connectivity.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Comprehensive Lab Connectivity Verification ==="
+echo "Testing Date: $(date)"
+echo ""
+
+# Test 1: Network connectivity
+echo "1. Testing basic network connectivity..."
+ping -c 3 192.168.100.1 > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "   ✓ pfSense firewall is reachable"
+else
+    echo "   ✗ pfSense firewall is not reachable"
+fi
+
+# Test 2: Port accessibility
+echo ""
+echo "2. Testing port accessibility..."
+nc -zv 192.168.100.1 80 2>/dev/null
+if [ $? -eq 0 ]; then
+    echo "   ✓ HTTP port (80) is accessible"
+else
+    echo "   ✗ HTTP port (80) is not accessible"
+fi
+
+nc -zv 192.168.100.1 443 2>/dev/null
+if [ $? -eq 0 ]; then
+    echo "   ✓ HTTPS port (443) is accessible"
+else
+    echo "   ✗ HTTPS port (443) is not accessible"
+fi
+
+# Test 3: Nmap scan
+echo ""
+echo "3. Running Nmap scan..."
+nmap -sS -p 22,80,443 192.168.100.1 | grep -E "(open|closed|filtered)"
+
+# Test 4: Web interface accessibility
+echo ""
+echo "4. Testing web interface..."
+curl -s -o /dev/null -w "%{http_code}" http://192.168.100.1 > /tmp/http_status
+HTTP_STATUS=$(cat /tmp/http_status)
+if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "302" ]; then
+    echo "   ✓ pfSense web interface is accessible (HTTP Status: $HTTP_STATUS)"
+else
+    echo "   ✗ pfSense web interface is not accessible (HTTP Status: $HTTP_STATUS)"
+fi
+
+# Test 5: Metasploit database connectivity
+echo ""
+echo "5. Testing Metasploit database..."
+msfdb status | grep -q "active"
+if [ $? -eq 0 ]; then
+    echo "   ✓ Metasploit database is active"
+else
+    echo "   ✗ Metasploit database is not active"
+fi
+
+echo ""
+echo "=== Lab Connectivity Verification Complete ==="
+echo "Results saved to ~/pentest-lab/results/connectivity-test-$(date +%Y%m%d-%H%M%S).log"
+EOF
+
+chmod +x ~/pentest-lab/scripts/verify-lab-connectivity.sh
+
+# Run the verification script
+~/pentest-lab/scripts/verify-lab-connectivity.sh | tee ~/pentest-lab/results/connectivity-test-$(date +%Y%m%d-%H%M%S).log
+Subtask 3.4: Create Lab Management Scripts
+Create scripts to manage the lab environment:
+
+# Create lab startup script
+cat > ~/pentest-lab/scripts/start-lab.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Starting Penetration Testing Lab ==="
+
+# Start pfSense VM
+echo "Starting pfSense firewall..."
+virsh start pfsense
+
+# Wait for pfSense to boot
+echo "Waiting for pfSense to boot (30 seconds)..."
+sleep 30
+
+# Setup test interface
+echo "Configuring test interface..."
+~/setup-test-interface.sh
+
+# Start Metasploit database
+echo "Starting Metasploit database..."
+sudo msfdb start
+
+echo ""
+echo "Lab startup complete!"
+echo "pfSense Web Interface: http://192.168.100.1"
+echo "Default credentials: admin/pfsense"
+EOF
+
+# Create lab shutdown script
+cat > ~/pentest-lab/scripts/stop-lab.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Stopping Penetration Testing Lab ==="
+
+# Stop pfSense VM
+echo "Stopping pfSense firewall..."
+virsh shutdown pfsense
+
+# Remove test interface
+echo "Removing test interface..."
+sudo ip link delete veth-test 2>/dev/null
+
+# Stop Metasploit database
+echo "Stopping Metasploit database..."
+sudo msfdb stop
+
+echo "Lab shutdown complete!"
+EOF
+
+chmod +x ~/pentest-lab/scripts/start-lab.sh
+chmod +x ~/pentest-lab/scripts/stop-lab.sh
+Troubleshooting Tips
+Common Issues and Solutions
+Issue 1: pfSense VM fails to start
+
+# Check virtualization support
+egrep -c '(vmx|svm)' /proc/cpuinfo
+
+# Ensure KVM modules are loaded
+sudo modprobe kvm
+sudo modprobe kvm_intel  # For Intel processors
+# OR
+sudo modprobe kvm_amd    # For AMD processors
+Issue 2: Network connectivity problems
+
+# Check virtual network status
+virsh net-list --all
+
+# Restart default network
+virsh net-destroy default
+virsh net-start default
+
+# Check bridge configuration
+brctl show
+Issue 3: Metasploit database connection issues
+
+# Reinitialize Metasploit database
+sudo msfdb delete
+sudo msfdb init
+
+# Check PostgreSQL status
+sudo systemctl status postgresql
+Issue 4: Permission denied errors
+
+# Add user to necessary groups
+sudo usermod -a -G libvirt,kvm $USER
+
+# Logout and login again for group changes to take effect
+Lab Verification Checklist
+Use this checklist to ensure your lab is properly configured:
+
+ pfSense VM is running and accessible
+ pfSense web interface loads at http://192.168.100.1
+ Kali Linux tools are installed and functional
+ Network connectivity between components is established
+ Metasploit Framework is installed and database is active
+ Port scans can be performed against pfSense
+ All lab management scripts execute without errors
+Conclusion
+In this lab, you have successfully created a comprehensive penetration testing environment using open-source tools on a single Linux machine. You have accomplished the following key objectives:
+
+Technical Achievements:
+
+Configured pfSense as a network firewall using virtualization technology
+Set up Kali Linux tools for penetration testing activities
+Installed and configured Metasploit Framework for security assessments
+Established network connectivity and verified all components
+Skills Developed:
+
+Virtualization and containerization techniques for security labs
+Network configuration and firewall management
+Penetration testing tool installation and configuration
+Security assessment methodology and verification procedures
+Why This Matters: This lab environment provides a safe, controlled space for learning and practicing penetration testing techniques. The skills you've developed here are directly applicable to real-world cybersecurity scenarios, including:
+
+Red Team Operations: Understanding how to set up isolated testing environments
+Security Assessments: Learning to use industry-standard tools like Metasploit and Nmap
+Network Security: Gaining hands-on experience with firewall configuration and network segmentation
+Professional Development: Building practical skills required for advanced penetration testing certifications
+The lab you've created serves as a foundation for more advanced security testing scenarios and can be expanded with additional vulnerable systems, network segments, and testing tools as your skills progress.
+
+Remember to always use these skills ethically and only on systems you own or have explicit permission to test. This lab environment provides a legal and safe space to develop your cybersecurity expertise.
