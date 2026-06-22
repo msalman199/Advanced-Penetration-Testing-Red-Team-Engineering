@@ -1,0 +1,501 @@
+ Launch OSINT Campaigns with Maigret
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure Maigret for username reconnaissance
+Execute targeted username searches across multiple platforms
+Automate OSINT campaigns using Python scripting
+Analyze and compile investigation results into structured reports
+Apply ethical considerations in OSINT research
+Prerequisites
+Basic Linux command line proficiency
+Fundamental Python programming knowledge
+Understanding of OSINT principles and ethics
+Familiarity with JSON and CSV file formats
+Lab Environment
+Al Nafi provides pre-configured Ubuntu cloud machines with all necessary tools. Click Start Lab to access your environment. No additional setup required.
+
+Task 1: Install and Configure Maigret
+Step 1: Update System and Install Dependencies
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 python3-pip git -y
+Step 2: Install Maigret
+pip3 install maigret
+maigret --version
+Step 3: Create Working Directory Structure
+mkdir -p ~/osint-lab/{results,scripts,reports}
+cd ~/osint-lab
+Task 2: Basic Maigret Operations
+Step 1: Understand Maigret Syntax
+View available options:
+
+maigret --help
+Basic syntax: maigret [options] username
+
+Step 2: Perform Basic Username Search
+Execute a search using test username:
+
+maigret johnsmith123
+This searches across 400+ platforms for the specified username.
+
+Step 3: Save Results in Multiple Formats
+maigret johnsmith123 --folderoutput ~/osint-lab/results/johnsmith123 --csv --html --json
+Step 4: Configure Search Parameters
+Adjust timeout and retry settings:
+
+maigret testuser456 --timeout 30 --retries 3 --folderoutput ~/osint-lab/results/testuser456
+Step 5: Use Verbose Mode for Analysis
+maigret demouser789 --verbose --folderoutput ~/osint-lab/results/demouser789
+Task 3: Automate OSINT Campaigns with Python
+Step 1: Create Automation Script Template
+Create ~/osint-lab/scripts/maigret_automator.py:
+
+#!/usr/bin/env python3
+
+import subprocess
+import os
+import json
+from datetime import datetime
+
+class MaigretAutomator:
+    def __init__(self, base_output_dir):
+        """
+        Initialize the Maigret automation tool.
+        
+        Args:
+            base_output_dir: Directory to store all results
+        """
+        self.base_output_dir = base_output_dir
+        self.results_summary = []
+        
+    def run_maigret_search(self, username, timeout=30, retries=3):
+        """
+        Execute Maigret search for a specific username.
+        
+        Args:
+            username: Target username to search
+            timeout: Request timeout in seconds
+            retries: Number of retry attempts
+            
+        Returns:
+            Dictionary containing search summary
+        """
+        print(f"[INFO] Starting search for: {username}")
+        
+        # TODO: Create output directory for this username
+        # TODO: Construct Maigret command with parameters
+        # TODO: Execute subprocess and capture output
+        # TODO: Parse JSON results and count found profiles
+        # TODO: Return summary dictionary with statistics
+        
+        pass
+    
+    def batch_search(self, usernames, delay=5):
+        """
+        Perform batch searches with delay between requests.
+        
+        Args:
+            usernames: List of usernames to search
+            delay: Seconds to wait between searches
+        """
+        # TODO: Iterate through username list
+        # TODO: Call run_maigret_search for each username
+        # TODO: Implement delay between searches
+        # TODO: Store results in self.results_summary
+        
+        pass
+    
+    def generate_summary_report(self):
+        """
+        Generate JSON and CSV summary reports of all searches.
+        """
+        # TODO: Create JSON summary file
+        # TODO: Create CSV summary file with headers
+        # TODO: Write results_summary to both files
+        
+        pass
+
+def main():
+    # Configuration
+    base_output_dir = os.path.expanduser("~/osint-lab/automated_results")
+    os.makedirs(base_output_dir, exist_ok=True)
+    
+    # TODO: Define list of usernames to search
+    usernames = []
+    
+    # TODO: Initialize MaigretAutomator
+    # TODO: Execute batch_search
+    # TODO: Generate summary report
+    
+    print("[COMPLETED] Automated campaign finished!")
+
+if __name__ == "__main__":
+    main()
+Step 2: Make Script Executable
+chmod +x ~/osint-lab/scripts/maigret_automator.py
+Step 3: Implement and Test Automation
+Complete the TODO sections in the script, then execute:
+
+cd ~/osint-lab/scripts
+python3 maigret_automator.py
+Task 4: Analyze and Compile Results
+Step 1: Create Analysis Script Template
+Create ~/osint-lab/scripts/result_analyzer.py:
+
+#!/usr/bin/env python3
+
+import json
+import csv
+import os
+from collections import defaultdict
+
+class MaigretAnalyzer:
+    def __init__(self, results_directory):
+        """
+        Initialize result analyzer.
+        
+        Args:
+            results_directory: Path to Maigret results
+        """
+        self.results_directory = results_directory
+        self.analysis_data = defaultdict(dict)
+        
+    def analyze_single_result(self, json_path, username):
+        """
+        Analyze a single JSON result file.
+        
+        Args:
+            json_path: Path to JSON result file
+            username: Username being analyzed
+        """
+        # TODO: Load JSON data from file
+        # TODO: Count claimed profiles
+        # TODO: Calculate average response times
+        # TODO: Identify fastest and slowest sites
+        # TODO: Store analysis in self.analysis_data[username]
+        
+        pass
+    
+    def analyze_all_results(self):
+        """
+        Analyze all JSON result files in directory.
+        """
+        # TODO: Walk through results directory
+        # TODO: Find all JSON files (exclude summaries)
+        # TODO: Call analyze_single_result for each file
+        
+        pass
+    
+    def generate_statistics_report(self):
+        """
+        Generate comprehensive statistics report.
+        """
+        # TODO: Calculate overall statistics
+        # TODO: Create text report with findings
+        # TODO: Generate CSV with detailed breakdown
+        # TODO: Save reports to files
+        
+        pass
+    
+    def identify_patterns(self):
+        """
+        Identify patterns across multiple usernames.
+        
+        Returns:
+            Dictionary containing pattern analysis
+        """
+        # TODO: Find common platforms across usernames
+        # TODO: Identify platform popularity
+        # TODO: Detect naming patterns
+        # TODO: Return pattern dictionary
+        
+        pass
+
+def main():
+    results_dir = os.path.expanduser("~/osint-lab/automated_results")
+    
+    # TODO: Initialize analyzer
+    # TODO: Run analysis
+    # TODO: Generate reports
+    # TODO: Display summary
+    
+    print("[COMPLETED] Analysis finished!")
+
+if __name__ == "__main__":
+    main()
+Step 2: Create Report Generator Template
+Create ~/osint-lab/scripts/report_generator.py:
+
+#!/usr/bin/env python3
+
+import json
+import os
+from datetime import datetime
+
+class OSINTReportGenerator:
+    def __init__(self, results_directory):
+        """
+        Initialize report generator.
+        
+        Args:
+            results_directory: Path to analysis results
+        """
+        self.results_directory = results_directory
+        self.report_data = {}
+        
+    def collect_data(self):
+        """
+        Collect all data needed for report generation.
+        """
+        # TODO: Load campaign summary JSON
+        # TODO: Load detailed analysis CSV
+        # TODO: Load individual result files
+        # TODO: Store in self.report_data
+        
+        pass
+    
+    def generate_text_report(self):
+        """
+        Generate comprehensive text-based report.
+        
+        Returns:
+            Path to generated report file
+        """
+        # TODO: Create report header with timestamp
+        # TODO: Add executive summary section
+        # TODO: Add per-username detailed findings
+        # TODO: Include methodology section
+        # TODO: Add recommendations
+        # TODO: Save to text file
+        
+        pass
+    
+    def generate_csv_summary(self):
+        """
+        Generate CSV summary for spreadsheet analysis.
+        """
+        # TODO: Create CSV with columns: username, platform, url, status
+        # TODO: Iterate through all results
+        # TODO: Write rows for each found profile
+        # TODO: Save CSV file
+        
+        pass
+    
+    def calculate_risk_score(self, username_data):
+        """
+        Calculate digital footprint risk score.
+        
+        Args:
+            username_data: Dictionary containing username results
+            
+        Returns:
+            Risk score (0-100) and risk level (Low/Medium/High)
+        """
+        # TODO: Count total profiles found
+        # TODO: Assess platform sensitivity
+        # TODO: Calculate exposure score
+        # TODO: Return score and level
+        
+        pass
+
+def main():
+    results_dir = os.path.expanduser("~/osint-lab/automated_results")
+    
+    # TODO: Initialize report generator
+    # TODO: Collect data
+    # TODO: Generate text report
+    # TODO: Generate CSV summary
+    # TODO: Display completion message
+    
+    print("[COMPLETED] Reports generated!")
+
+if __name__ == "__main__":
+    main()
+Step 3: Implement Analysis Scripts
+Complete the TODO sections in both scripts, then execute:
+
+cd ~/osint-lab/scripts
+python3 result_analyzer.py
+python3 report_generator.py
+Step 4: Review Generated Reports
+cd ~/osint-lab/automated_results
+ls -la
+cat analysis_report.txt
+head -20 detailed_analysis.csv
+Task 5: Advanced OSINT Techniques
+Step 1: Create Profile Correlation Script
+Create ~/osint-lab/scripts/profile_correlator.py:
+
+#!/usr/bin/env python3
+
+import json
+from collections import defaultdict
+from urllib.parse import urlparse
+
+class ProfileCorrelator:
+    def __init__(self, results_directory):
+        """
+        Initialize profile correlation tool.
+        
+        Args:
+            results_directory: Path to Maigret results
+        """
+        self.results_directory = results_directory
+        self.correlations = defaultdict(list)
+        
+    def extract_metadata(self, username, results_data):
+        """
+        Extract metadata from username results.
+        
+        Args:
+            username: Target username
+            results_data: JSON results dictionary
+            
+        Returns:
+            Dictionary containing extracted metadata
+        """
+        # TODO: Extract domains from URLs
+        # TODO: Categorize platforms (social, professional, gaming)
+        # TODO: Calculate response time statistics
+        # TODO: Generate potential email addresses
+        # TODO: Return metadata dictionary
+        
+        pass
+    
+    def find_correlations(self):
+        """
+        Find correlations between different usernames.
+        
+        Returns:
+            Dictionary containing correlation findings
+        """
+        # TODO: Load all username results
+        # TODO: Compare platform presence across usernames
+        # TODO: Identify shared domains
+        # TODO: Detect similar patterns
+        # TODO: Return correlation dictionary
+        
+        pass
+    
+    def generate_correlation_report(self):
+        """
+        Generate report showing correlations and patterns.
+        """
+        # TODO: Create correlation matrix
+        # TODO: Identify strong correlations
+        # TODO: Generate visualization data
+        # TODO: Save report to file
+        
+        pass
+
+def main():
+    # TODO: Initialize correlator
+    # TODO: Find correlations
+    # TODO: Generate report
+    
+    print("[COMPLETED] Correlation analysis finished!")
+
+if __name__ == "__main__":
+    main()
+Step 2: Implement Timeline Analysis
+Create ~/osint-lab/scripts/timeline_builder.py:
+
+#!/usr/bin/env python3
+
+from datetime import datetime
+import json
+
+class TimelineBuilder:
+    def __init__(self, results_directory):
+        """
+        Build investigation timeline from results.
+        
+        Args:
+            results_directory: Path to results
+        """
+        self.results_directory = results_directory
+        self.timeline = []
+        
+    def build_timeline(self):
+        """
+        Construct chronological timeline of findings.
+        """
+        # TODO: Load campaign summary with timestamps
+        # TODO: Sort events chronologically
+        # TODO: Add search events to timeline
+        # TODO: Add discovery events to timeline
+        
+        pass
+    
+    def export_timeline(self, format='json'):
+        """
+        Export timeline in specified format.
+        
+        Args:
+            format: Output format (json, csv, txt)
+        """
+        # TODO: Format timeline data
+        # TODO: Write to appropriate file format
+        # TODO: Return file path
+        
+        pass
+
+def main():
+    # TODO: Initialize timeline builder
+    # TODO: Build timeline
+    # TODO: Export in multiple formats
+    
+    print("[COMPLETED] Timeline generated!")
+
+if __name__ == "__main__":
+    main()
+Step 3: Test Advanced Scripts
+cd ~/osint-lab/scripts
+python3 profile_correlator.py
+python3 timeline_builder.py
+Expected Outcomes
+After completing this lab, you should have:
+
+Functional Maigret installation with working searches
+Automated Python scripts for batch OSINT campaigns
+Structured results in JSON, CSV, and text formats
+Comprehensive analysis reports with statistics
+Understanding of username reconnaissance techniques
+Knowledge of ethical OSINT practices
+Troubleshooting Tips
+Issue: Maigret command not found
+
+Solution: Ensure pip3 installation completed successfully
+Add ~/.local/bin to PATH: export PATH=$PATH:~/.local/bin
+Issue: Timeout errors during searches
+
+Solution: Increase timeout value: --timeout 60
+Reduce concurrent requests or add delays between searches
+Issue: JSON parsing errors in scripts
+
+Solution: Verify JSON file exists and is valid
+Add error handling with try-except blocks
+Check file permissions: chmod 644 *.json
+Issue: Empty or incomplete results
+
+Solution: Some platforms may block automated requests
+Use --verbose flag to see detailed errors
+Verify internet connectivity and DNS resolution
+Conclusion
+This lab introduced practical OSINT techniques using Maigret for username reconnaissance. You learned to automate investigations, analyze results systematically, and generate professional reports. These skills form the foundation for ethical information gathering in security research, digital forensics, and threat intelligence operations.
+
+Key Takeaways:
+
+Maigret efficiently searches 400+ platforms simultaneously
+Automation scales OSINT operations and ensures consistency
+Structured analysis reveals patterns and correlations
+Professional reporting communicates findings effectively
+Ethical considerations must guide all OSINT activities
+Next Steps:
+
+Practice with diverse username patterns
+Integrate Maigret with other OSINT tools
+Develop custom analysis algorithms
+Study platform-specific investigation techniques
+Research legal frameworks governing OSINT in your jurisdiction
+Remember: Always conduct OSINT activities ethically, respect privacy, and comply with applicable laws and regulations.
