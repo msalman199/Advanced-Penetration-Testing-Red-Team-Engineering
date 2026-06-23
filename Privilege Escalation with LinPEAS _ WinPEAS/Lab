@@ -1,0 +1,592 @@
+Privilege Escalation with LinPEAS & WinPEAS
+Objectives
+By the end of this lab, students will be able to:
+
+Execute LinPEAS and WinPEAS enumeration tools on target systems
+Analyze enumeration output to identify privilege escalation vectors
+Understand common privilege escalation vulnerabilities on Linux and Windows
+Develop Python automation scripts for privilege escalation workflows
+Apply systematic approaches to privilege escalation in penetration testing
+Prerequisites
+Basic Linux command line proficiency
+Understanding of file permissions and user privileges
+Fundamental Windows operating system knowledge
+Basic Python programming skills
+Familiarity with penetration testing concepts
+Lab Environment
+Your cloud machine includes:
+
+Kali Linux as the primary operating system
+Docker containers with vulnerable Linux and Windows environments
+Pre-installed tools: LinPEAS, WinPEAS, Python3, Docker
+Network access for downloading required tools
+Task 1: Linux Privilege Escalation with LinPEAS
+Step 1: Environment Setup
+Create a working directory and prepare the vulnerable Linux container:
+
+# Create lab directory
+mkdir -p ~/privesc-lab && cd ~/privesc-lab
+
+# Check current privileges
+whoami && id
+
+# Create vulnerable Linux container
+cat > Dockerfile.linux << 'EOF'
+FROM ubuntu:20.04
+RUN apt-get update && apt-get install -y sudo vim curl wget python3
+RUN useradd -m -s /bin/bash lowpriv
+RUN echo 'lowpriv:password' | chpasswd
+RUN echo 'lowpriv ALL=(ALL) NOPASSWD: /usr/bin/vim' >> /etc/sudoers
+RUN chmod 4755 /usr/bin/find
+RUN echo '#!/bin/bash\necho "Cron job executed"' > /tmp/backup.sh
+RUN chmod 777 /tmp/backup.sh
+CMD ["/bin/bash"]
+EOF
+
+# Build and run container
+docker build -f Dockerfile.linux -t vuln-linux .
+docker run -d --name vuln-linux vuln-linux tail -f /dev/null
+Step 2: Download and Execute LinPEAS
+# Download LinPEAS
+wget https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh
+chmod +x linpeas.sh
+
+# Copy to container and execute
+docker cp linpeas.sh vuln-linux:/tmp/
+docker exec vuln-linux /tmp/linpeas.sh > linpeas_output.txt 2>&1
+
+# View results
+less linpeas_output.txt
+Step 3: Analyze LinPEAS Output
+Extract key findings from the output:
+
+# Search for SUID binaries
+grep -A 10 "SUID" linpeas_output.txt
+
+# Check sudo permissions
+grep -A 5 "sudo" linpeas_output.txt
+
+# Find writable files
+grep -A 10 "writable" linpeas_output.txt
+
+# Identify cron jobs
+grep -A 10 "cron" linpeas_output.txt
+Step 4: Create Linux Exploitation Script
+Develop a Python script to automate exploitation attempts:
+
+#!/usr/bin/env python3
+"""
+Linux Privilege Escalation Automation Script
+Students: Complete the TODO sections to implement exploitation logic
+"""
+
+import subprocess
+import json
+import logging
+
+class LinuxPrivEscAutomator:
+    def __init__(self):
+        self.setup_logging()
+        self.findings = {
+            "suid_binaries": [],
+            "sudo_permissions": [],
+            "writable_files": [],
+            "exploitable": []
+        }
+    
+    def setup_logging(self):
+        """Configure logging for the automation script"""
+        # TODO: Setup logging configuration
+        # TODO: Create file and console handlers
+        pass
+    
+    def parse_linpeas_output(self, output_file):
+        """
+        Parse LinPEAS output file and extract key findings
+        
+        Args:
+            output_file: Path to LinPEAS output file
+        """
+        # TODO: Read the output file
+        # TODO: Parse SUID binaries section
+        # TODO: Parse sudo permissions section
+        # TODO: Parse writable files section
+        # TODO: Store findings in self.findings dictionary
+        pass
+    
+    def check_suid_exploits(self):
+        """
+        Check for exploitable SUID binaries
+        
+        Returns:
+            List of exploitable SUID binaries with methods
+        """
+        exploitable_binaries = ['find', 'vim', 'nano', 'less', 'cp']
+        exploits = []
+        
+        # TODO: Iterate through found SUID binaries
+        # TODO: Check if binary is in exploitable list
+        # TODO: Add exploitation method for each binary
+        # TODO: Return list of exploits
+        
+        return exploits
+    
+    def attempt_suid_find_exploit(self):
+        """
+        Attempt to exploit SUID find binary
+        
+        Returns:
+            Dictionary with exploitation results
+        """
+        result = {
+            "exploit": "SUID find",
+            "success": False,
+            "output": ""
+        }
+        
+        # TODO: Execute find command with -exec parameter
+        # TODO: Check if command executed successfully
+        # TODO: Verify privilege escalation occurred
+        # TODO: Update result dictionary
+        
+        return result
+    
+    def check_sudo_exploits(self):
+        """
+        Check for exploitable sudo permissions
+        
+        Returns:
+            List of exploitable sudo commands
+        """
+        # TODO: Parse sudo -l output
+        # TODO: Identify NOPASSWD entries
+        # TODO: Check for exploitable commands
+        # TODO: Return list of exploitable sudo permissions
+        pass
+    
+    def generate_report(self):
+        """Generate comprehensive exploitation report"""
+        # TODO: Create summary of findings
+        # TODO: List successful exploitations
+        # TODO: Provide remediation recommendations
+        # TODO: Save report to JSON file
+        pass
+    
+    def run_automation(self):
+        """Execute complete automation workflow"""
+        # TODO: Parse LinPEAS output
+        # TODO: Check for SUID exploits
+        # TODO: Check for sudo exploits
+        # TODO: Attempt exploitations
+        # TODO: Generate final report
+        pass
+
+if __name__ == "__main__":
+    automator = LinuxPrivEscAutomator()
+    automator.run_automation()
+Task 2: Windows Privilege Escalation with WinPEAS
+Step 1: Setup Windows Simulation Environment
+# Download WinPEAS
+wget https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEASx64.exe -O winpeas.exe
+wget https://github.com/carlospolop/PEASS-ng/releases/latest/download/winPEAS.bat -O winpeas.bat
+
+# Create Windows simulation container
+cat > Dockerfile.windows << 'EOF'
+FROM ubuntu:20.04
+RUN apt-get update && apt-get install -y wine xvfb
+RUN mkdir -p /root/.wine/drive_c/temp
+RUN echo 'echo Vulnerable service' > /root/.wine/drive_c/temp/service.bat
+RUN chmod 777 /root/.wine/drive_c/temp/service.bat
+CMD ["/bin/bash"]
+EOF
+
+docker build -f Dockerfile.windows -t vuln-windows .
+docker run -d --name vuln-windows vuln-windows tail -f /dev/null
+Step 2: Create WinPEAS Simulation Script
+Since we're on Linux, create a Python simulation of WinPEAS functionality:
+
+#!/usr/bin/env python3
+"""
+WinPEAS Simulation Script
+Students: Complete the TODO sections to simulate Windows enumeration
+"""
+
+import json
+from datetime import datetime
+
+class WinPEASSimulator:
+    def __init__(self):
+        self.results = {
+            "timestamp": datetime.now().isoformat(),
+            "system_info": {},
+            "vulnerabilities": []
+        }
+    
+    def gather_system_info(self):
+        """Simulate Windows system information gathering"""
+        # TODO: Populate system_info with simulated Windows data
+        # TODO: Include OS version, architecture, domain info
+        pass
+    
+    def enumerate_users(self):
+        """Simulate user enumeration"""
+        # TODO: Create list of simulated users
+        # TODO: Identify admin vs standard users
+        # TODO: Check password policies
+        pass
+    
+    def check_services(self):
+        """Simulate service enumeration"""
+        vulnerable_services = []
+        
+        # TODO: Create simulated vulnerable services
+        # TODO: Include unquoted service paths
+        # TODO: Include services with weak permissions
+        # TODO: Add to vulnerable_services list
+        
+        return vulnerable_services
+    
+    def check_registry_settings(self):
+        """Simulate registry enumeration"""
+        # TODO: Check for AlwaysInstallElevated
+        # TODO: Check for AutoLogon credentials
+        # TODO: Check for stored passwords
+        pass
+    
+    def identify_vulnerabilities(self):
+        """Identify and categorize vulnerabilities"""
+        vulnerabilities = []
+        
+        # TODO: Add unquoted service path vulnerabilities
+        # TODO: Add weak service permission vulnerabilities
+        # TODO: Add AlwaysInstallElevated if enabled
+        # TODO: Add stored credential vulnerabilities
+        # TODO: Assign severity levels (Critical, High, Medium, Low)
+        
+        self.results["vulnerabilities"] = vulnerabilities
+    
+    def generate_report(self):
+        """Generate WinPEAS-style report"""
+        # TODO: Print formatted report header
+        # TODO: Display system information
+        # TODO: List vulnerabilities by severity
+        # TODO: Provide exploitation recommendations
+        # TODO: Save results to JSON file
+        pass
+    
+    def run_full_scan(self):
+        """Execute complete WinPEAS simulation"""
+        # TODO: Call all enumeration methods
+        # TODO: Identify vulnerabilities
+        # TODO: Generate comprehensive report
+        pass
+
+if __name__ == "__main__":
+    simulator = WinPEASSimulator()
+    simulator.run_full_scan()
+Step 3: Analyze Windows Vulnerabilities
+Create an analysis script for WinPEAS results:
+
+#!/usr/bin/env python3
+"""
+WinPEAS Results Analyzer
+Students: Complete the analysis logic
+"""
+
+import json
+
+def analyze_vulnerabilities(results_file):
+    """
+    Analyze WinPEAS results and prioritize vulnerabilities
+    
+    Args:
+        results_file: Path to WinPEAS results JSON file
+    """
+    # TODO: Load JSON results file
+    # TODO: Count vulnerabilities by severity
+    # TODO: Identify highest priority targets
+    # TODO: Generate exploitation order
+    pass
+
+def check_always_install_elevated(results):
+    """Check if AlwaysInstallElevated is exploitable"""
+    # TODO: Search for AlwaysInstallElevated in results
+    # TODO: Verify both registry keys are set
+    # TODO: Return exploitation feasibility
+    pass
+
+def check_unquoted_service_paths(results):
+    """Identify exploitable unquoted service paths"""
+    # TODO: Extract service information from results
+    # TODO: Check for spaces in unquoted paths
+    # TODO: Verify write permissions on path
+    # TODO: Return list of exploitable services
+    pass
+
+def generate_exploitation_plan(vulnerabilities):
+    """Create prioritized exploitation plan"""
+    # TODO: Sort vulnerabilities by severity and exploitability
+    # TODO: Create step-by-step exploitation plan
+    # TODO: Include required tools and commands
+    # TODO: Output formatted plan
+    pass
+
+if __name__ == "__main__":
+    analyze_vulnerabilities('winpeas_results.json')
+Task 3: Comprehensive Automation Framework
+Step 1: Create Master Automation Script
+Develop a unified automation framework:
+
+#!/usr/bin/env python3
+"""
+Comprehensive Privilege Escalation Automation Framework
+Students: Integrate Linux and Windows automation components
+"""
+
+import os
+import subprocess
+import json
+import logging
+from datetime import datetime
+
+class PrivEscAutomationFramework:
+    def __init__(self):
+        self.results = {
+            "scan_start": datetime.now().isoformat(),
+            "linux_findings": {},
+            "windows_findings": {},
+            "exploitation_log": [],
+            "successful_escalations": []
+        }
+        self.setup_logging()
+    
+    def setup_logging(self):
+        """Configure comprehensive logging"""
+        # TODO: Setup logging with file and console handlers
+        # TODO: Set appropriate log levels
+        # TODO: Create log format
+        pass
+    
+    def run_linpeas_scan(self, target_container):
+        """
+        Execute LinPEAS on target container
+        
+        Args:
+            target_container: Docker container name
+        
+        Returns:
+            Dictionary with scan results
+        """
+        # TODO: Copy LinPEAS to container
+        # TODO: Execute LinPEAS with timeout
+        # TODO: Capture and save output
+        # TODO: Parse results
+        # TODO: Return findings dictionary
+        pass
+    
+    def run_winpeas_scan(self, target_container):
+        """
+        Execute WinPEAS simulation on target
+        
+        Args:
+            target_container: Docker container name
+        
+        Returns:
+            Dictionary with scan results
+        """
+        # TODO: Execute WinPEAS simulation
+        # TODO: Capture output
+        # TODO: Parse vulnerabilities
+        # TODO: Return findings dictionary
+        pass
+    
+    def attempt_linux_exploits(self, findings):
+        """
+        Attempt automated Linux privilege escalation
+        
+        Args:
+            findings: Dictionary of Linux findings
+        
+        Returns:
+            List of exploitation attempts and results
+        """
+        attempts = []
+        
+        # TODO: Iterate through SUID findings
+        # TODO: Attempt SUID exploitations
+        # TODO: Try sudo permission exploits
+        # TODO: Test writable file exploits
+        # TODO: Log all attempts and results
+        
+        return attempts
+    
+    def attempt_windows_exploits(self, findings):
+        """
+        Attempt automated Windows privilege escalation
+        
+        Args:
+            findings: Dictionary of Windows findings
+        
+        Returns:
+            List of exploitation attempts and results
+        """
+        attempts = []
+        
+        # TODO: Check for AlwaysInstallElevated
+        # TODO: Attempt unquoted service path exploits
+        # TODO: Try weak service permission exploits
+        # TODO: Test stored credential usage
+        # TODO: Log all attempts and results
+        
+        return attempts
+    
+    def generate_comprehensive_report(self):
+        """Generate final automation report"""
+        # TODO: Calculate scan duration
+        # TODO: Summarize findings by platform
+        # TODO: List successful escalations
+        # TODO: Provide remediation recommendations
+        # TODO: Save detailed JSON report
+        # TODO: Create human-readable summary
+        pass
+    
+    def run_full_automation(self, linux_target=None, windows_target=None):
+        """
+        Execute complete automation workflow
+        
+        Args:
+            linux_target: Linux container name (optional)
+            windows_target: Windows container name (optional)
+        """
+        # TODO: Run Linux scans if target provided
+        # TODO: Run Windows scans if target provided
+        # TODO: Attempt exploitations on both platforms
+        # TODO: Generate comprehensive report
+        # TODO: Clean up temporary files
+        pass
+
+if __name__ == "__main__":
+    framework = PrivEscAutomationFramework()
+    framework.run_full_automation(
+        linux_target="vuln-linux",
+        windows_target="vuln-windows"
+    )
+Step 2: Create Exploitation Helper Functions
+#!/usr/bin/env python3
+"""
+Privilege Escalation Helper Functions
+Students: Implement exploitation helper methods
+"""
+
+def exploit_suid_find(target_container):
+    """
+    Exploit SUID find binary
+    
+    Args:
+        target_container: Docker container name
+    
+    Returns:
+        Exploitation result dictionary
+    """
+    # TODO: Execute find with -exec parameter
+    # TODO: Verify privilege escalation
+    # TODO: Return success/failure status
+    pass
+
+def exploit_sudo_vim(target_container):
+    """
+    Exploit sudo vim permissions
+    
+    Args:
+        target_container: Docker container name
+    
+    Returns:
+        Exploitation result dictionary
+    """
+    # TODO: Execute vim with sudo
+    # TODO: Use vim shell escape
+    # TODO: Verify root access
+    pass
+
+def exploit_writable_cron(target_container, cron_file):
+    """
+    Exploit writable cron job
+    
+    Args:
+        target_container: Docker container name
+        cron_file: Path to writable cron file
+    
+    Returns:
+        Exploitation result dictionary
+    """
+    # TODO: Modify cron file with payload
+    # TODO: Wait for cron execution
+    # TODO: Verify privilege escalation
+    pass
+
+def create_msi_payload():
+    """
+    Create MSI payload for AlwaysInstallElevated
+    
+    Returns:
+        Path to created MSI file
+    """
+    # TODO: Generate MSI payload
+    # TODO: Configure for privilege escalation
+    # TODO: Return payload path
+    pass
+
+def exploit_unquoted_service(service_name, service_path):
+    """
+    Exploit unquoted service path
+    
+    Args:
+        service_name: Name of vulnerable service
+        service_path: Unquoted service path
+    
+    Returns:
+        Exploitation result dictionary
+    """
+    # TODO: Identify injection point in path
+    # TODO: Place malicious executable
+    # TODO: Restart service
+    # TODO: Verify privilege escalation
+    pass
+Step 3: Execute Complete Automation
+# Run the complete automation framework
+python3 privilege_escalation_automation.py
+
+# Review results
+cat automation_results.json | python3 -m json.tool
+
+# Check exploitation log
+cat privilege_escalation.log
+
+# View summary report
+cat automation_report.txt
+Expected Outcomes
+After completing this lab, you should have:
+
+Successfully executed LinPEAS and WinPEAS on target systems
+Identified multiple privilege escalation vectors on both platforms
+Developed functional Python automation scripts for privilege escalation
+Analyzed enumeration results to prioritize exploitation attempts
+Created comprehensive reports documenting findings and exploitations
+Troubleshooting Tips
+LinPEAS not executing:
+
+Verify execute permissions: chmod +x linpeas.sh
+Check if script was transferred correctly to container
+Ensure sufficient disk space in container
+Docker container issues:
+
+Restart Docker service: sudo systemctl restart docker
+Remove and rebuild containers: docker rm -f container_name
+Check Docker logs: docker logs container_name
+Python script errors:
+
+Verify Python3 is installed: python3 --version
+Install missing modules: pip3 install module_name
+Check file paths and permissions
+Conclusion
+This lab provided hands-on experience with privilege escalation enumeration and exploitation using LinPEAS and WinPEAS. You learned to identify common vulnerabilities, automate enumeration processes, and develop systematic approaches to privilege escalation. These skills are essential for penetration testing and security assessments. Remember to always obtain proper authorization before performing privilege escalation testing on any system.
