@@ -1,0 +1,549 @@
+Dump and Reuse Kerberos Tickets
+Objectives
+By the end of this lab, students will be able to:
+
+Understand Kerberos ticket-based authentication mechanisms
+Extract Kerberos tickets from credential caches
+Manipulate and reuse tickets for authentication
+Implement Python-based ticket extraction tools
+Recognize security implications of ticket theft attacks
+Prerequisites
+Students should have:
+
+Basic understanding of Active Directory and Kerberos protocols
+Linux command-line proficiency
+Python programming fundamentals
+Knowledge of authentication concepts
+Lab Environment Setup
+Ready-to-Use Cloud Machines: Al Nafi provides Linux-based cloud machines with all necessary tools pre-installed. Simply click Start Lab to begin.
+
+The environment includes:
+
+Ubuntu 22.04 LTS with security tools
+Python 3.10+ with required libraries
+MIT Kerberos implementation
+Pre-configured test realm
+Task 1: Configure Kerberos Test Environment
+Step 1: Install Kerberos Components
+# Install Kerberos client and server tools
+sudo apt update
+sudo apt install krb5-user krb5-kdc krb5-admin-server -y
+
+# Install Python dependencies
+pip3 install pyasn1 pyasn1-modules pycryptodome
+Step 2: Configure Kerberos Realm
+# Create Kerberos configuration
+sudo tee /etc/krb5.conf << 'EOF'
+[libdefaults]
+    default_realm = TESTLAB.LOCAL
+    dns_lookup_realm = false
+    dns_lookup_kdc = false
+    ticket_lifetime = 24h
+    forwardable = true
+
+[realms]
+    TESTLAB.LOCAL = {
+        kdc = localhost:88
+        admin_server = localhost:749
+    }
+
+[domain_realm]
+    .testlab.local = TESTLAB.LOCAL
+    testlab.local = TESTLAB.LOCAL
+EOF
+Step 3: Initialize Kerberos Database
+# Create the Kerberos database (use a strong password when prompted)
+sudo kdb5_util create -s -r TESTLAB.LOCAL
+
+# Start Kerberos services
+sudo systemctl start krb5-kdc krb5-admin-server
+sudo systemctl enable krb5-kdc krb5-admin-server
+Step 4: Create Test Principals
+# Create test users and services
+sudo kadmin.local << 'EOF'
+addprinc -pw Password123! testuser@TESTLAB.LOCAL
+addprinc -pw Service456! HTTP/webserver.testlab.local@TESTLAB.LOCAL
+addprinc -pw Admin789! admin@TESTLAB.LOCAL
+exit
+EOF
+Step 5: Verify Configuration
+# Authenticate as test user
+echo "Password123!" | kinit testuser@TESTLAB.LOCAL
+
+# List current tickets
+klist -v
+
+# Verify ticket cache location
+echo "Ticket cache: /tmp/krb5cc_$(id -u)"
+Task 2: Extract Kerberos Tickets
+Step 1: Create Ticket Extraction Script
+Create ticket_extractor.py:
+
+#!/usr/bin/env python3
+"""
+Kerberos Ticket Extractor
+Extracts and encodes ticket cache for analysis
+"""
+
+import os
+import sys
+import base64
+import subprocess
+from datetime import datetime
+
+class TicketExtractor:
+    def __init__(self):
+        self.cache_path = f"/tmp/krb5cc_{os.getuid()}"
+    
+    def list_tickets(self):
+        """
+        List all current Kerberos tickets using klist command.
+        
+        Returns:
+            bool: True if tickets found, False otherwise
+        """
+        # TODO: Execute klist command using subprocess
+        # TODO: Capture and display output
+        # TODO: Return True if successful, False otherwise
+        pass
+    
+    def extract_cache(self):
+        """
+        Extract ticket cache file and encode it.
+        
+        Returns:
+            str: Base64 encoded cache data or None
+        """
+        # TODO: Check if cache file exists
+        # TODO: Read cache file in binary mode
+        # TODO: Encode cache data using base64
+        # TODO: Save encoded data to 'extracted_tickets.b64'
+        # TODO: Return encoded string
+        pass
+    
+    def parse_ticket_details(self):
+        """
+        Parse and display detailed ticket information.
+        Extracts principal names, encryption types, and validity periods.
+        """
+        # TODO: Execute 'klist -e -f' command
+        # TODO: Parse output for Server, Client, Etype information
+        # TODO: Display formatted ticket details
+        pass
+
+def main():
+    print("Kerberos Ticket Extractor")
+    print("=" * 40)
+    
+    extractor = TicketExtractor()
+    
+    # TODO: Call list_tickets() method
+    # TODO: Call extract_cache() method
+    # TODO: Call parse_ticket_details() method
+    # TODO: Display success/failure messages
+
+if __name__ == "__main__":
+    main()
+Step 2: Execute Ticket Extraction
+# Make script executable
+chmod +x ticket_extractor.py
+
+# Run extraction
+python3 ticket_extractor.py
+
+# Verify extraction output
+ls -lh extracted_tickets.b64
+Step 3: Analyze Cache Structure
+Create cache_analyzer.py:
+
+#!/usr/bin/env python3
+"""
+Analyzes Kerberos credential cache structure
+"""
+
+import struct
+
+class CacheAnalyzer:
+    def __init__(self, cache_path):
+        self.cache_path = cache_path
+    
+    def read_header(self):
+        """
+        Read and parse credential cache header.
+        
+        Returns:
+            dict: Header information including version and type
+        """
+        # TODO: Open cache file in binary mode
+        # TODO: Read first 8 bytes for header
+        # TODO: Parse version using struct.unpack
+        # TODO: Return dictionary with header info
+        pass
+    
+    def analyze_structure(self):
+        """
+        Analyze complete cache file structure.
+        Display file size, permissions, and modification time.
+        """
+        # TODO: Get file statistics using os.stat
+        # TODO: Display file size and permissions
+        # TODO: Show last modification time
+        pass
+
+def main():
+    import os
+    cache_path = f"/tmp/krb5cc_{os.getuid()}"
+    
+    # TODO: Create CacheAnalyzer instance
+    # TODO: Call read_header() method
+    # TODO: Call analyze_structure() method
+    # TODO: Display results
+
+if __name__ == "__main__":
+    main()
+Task 3: Reuse Extracted Tickets
+Step 1: Create Ticket Injection Tool
+Create ticket_injector.py:
+
+#!/usr/bin/env python3
+"""
+Kerberos Ticket Injector
+Injects previously extracted tickets into credential cache
+"""
+
+import os
+import sys
+import base64
+import shutil
+import subprocess
+
+class TicketInjector:
+    def __init__(self):
+        self.cache_path = f"/tmp/krb5cc_{os.getuid()}"
+        self.backup_path = f"{self.cache_path}.backup"
+    
+    def backup_current_cache(self):
+        """
+        Backup existing ticket cache before injection.
+        
+        Returns:
+            bool: True if backup successful
+        """
+        # TODO: Check if current cache exists
+        # TODO: Copy cache to backup location using shutil
+        # TODO: Return success status
+        pass
+    
+    def inject_tickets(self, encoded_file):
+        """
+        Inject tickets from encoded file into cache.
+        
+        Args:
+            encoded_file: Path to base64 encoded ticket file
+        
+        Returns:
+            bool: True if injection successful
+        """
+        # TODO: Read encoded ticket file
+        # TODO: Decode base64 data
+        # TODO: Write decoded data to cache_path
+        # TODO: Set proper permissions (0o600)
+        # TODO: Return success status
+        pass
+    
+    def verify_injection(self):
+        """
+        Verify that tickets were successfully injected.
+        
+        Returns:
+            bool: True if tickets are valid
+        """
+        # TODO: Execute 'klist' command
+        # TODO: Check return code
+        # TODO: Display ticket information
+        # TODO: Return verification status
+        pass
+    
+    def restore_backup(self):
+        """
+        Restore original ticket cache from backup.
+        """
+        # TODO: Check if backup exists
+        # TODO: Copy backup to original location
+        # TODO: Display restoration status
+        pass
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python3 ticket_injector.py <encoded_tickets_file>")
+        sys.exit(1)
+    
+    # TODO: Create TicketInjector instance
+    # TODO: Backup current cache
+    # TODO: Inject tickets from file
+    # TODO: Verify injection
+    # TODO: Prompt user to restore backup
+
+if __name__ == "__main__":
+    main()
+Step 2: Test Ticket Injection
+# Clear current tickets
+kdestroy
+
+# Verify no tickets exist
+klist
+
+# Inject previously extracted tickets
+python3 ticket_injector.py extracted_tickets.b64
+
+# Verify injected tickets
+klist -v
+Step 3: Test Service Access
+# Request service ticket using injected TGT
+kvno HTTP/webserver.testlab.local@TESTLAB.LOCAL
+
+# List all tickets including service tickets
+klist -A
+Task 4: Automate Ticket Operations
+Step 1: Create Automation Framework
+Create kerberos_automation.py:
+
+#!/usr/bin/env python3
+"""
+Kerberos Automation Framework
+Automates ticket extraction, injection, and testing
+"""
+
+import os
+import json
+import subprocess
+from datetime import datetime
+
+class KerberosAutomation:
+    def __init__(self, realm='TESTLAB.LOCAL'):
+        self.realm = realm
+        self.cache_path = f"/tmp/krb5cc_{os.getuid()}"
+        self.log_file = 'kerberos_operations.log'
+    
+    def log_action(self, message):
+        """
+        Log actions with timestamp.
+        
+        Args:
+            message: Log message to record
+        """
+        # TODO: Create timestamp
+        # TODO: Format log entry
+        # TODO: Write to log file
+        # TODO: Print to console
+        pass
+    
+    def authenticate_user(self, username, password):
+        """
+        Authenticate user and obtain TGT.
+        
+        Args:
+            username: Username without realm
+            password: User password
+        
+        Returns:
+            bool: True if authentication successful
+        """
+        # TODO: Construct full principal name
+        # TODO: Use subprocess.Popen with kinit
+        # TODO: Pass password via stdin
+        # TODO: Check return code and log result
+        pass
+    
+    def extract_tickets_with_metadata(self):
+        """
+        Extract tickets and save with metadata.
+        
+        Returns:
+            dict: Extraction data including timestamp and ticket info
+        """
+        # TODO: Get current ticket list
+        # TODO: Read cache file
+        # TODO: Encode cache data
+        # TODO: Create metadata dictionary
+        # TODO: Save to JSON file with timestamp
+        pass
+    
+    def test_service_access(self, services):
+        """
+        Test access to multiple services.
+        
+        Args:
+            services: List of service principals to test
+        
+        Returns:
+            dict: Results with successful and failed access
+        """
+        # TODO: Initialize results dictionary
+        # TODO: Loop through services
+        # TODO: Attempt to get service ticket with kvno
+        # TODO: Record success/failure for each service
+        # TODO: Return results dictionary
+        pass
+    
+    def monitor_ticket_lifetime(self):
+        """
+        Monitor and display ticket lifetime information.
+        """
+        # TODO: Execute 'klist -v' command
+        # TODO: Parse output for expiration times
+        # TODO: Calculate remaining lifetime
+        # TODO: Display formatted information
+        pass
+
+def main():
+    automation = KerberosAutomation()
+    
+    # TODO: Implement command-line argument parsing
+    # TODO: Support operations: authenticate, extract, inject, test
+    # TODO: Call appropriate methods based on arguments
+    # TODO: Display results and log actions
+
+if __name__ == "__main__":
+    main()
+Step 2: Test Automation Framework
+# Make script executable
+chmod +x kerberos_automation.py
+
+# Test authentication
+python3 kerberos_automation.py --authenticate testuser Password123!
+
+# Test extraction with metadata
+python3 kerberos_automation.py --extract
+
+# Test service access
+python3 kerberos_automation.py --test-services
+Step 3: Create Service Testing Script
+Create service_tester.py:
+
+#!/usr/bin/env python3
+"""
+Service Access Tester
+Tests access to multiple Kerberos-protected services
+"""
+
+import subprocess
+import time
+
+class ServiceTester:
+    def __init__(self):
+        self.test_services = [
+            'HTTP/webserver.testlab.local@TESTLAB.LOCAL',
+            'HOST/fileserver.testlab.local@TESTLAB.LOCAL',
+        ]
+    
+    def test_single_service(self, service):
+        """
+        Test access to a single service.
+        
+        Args:
+            service: Service principal name
+        
+        Returns:
+            bool: True if access successful
+        """
+        # TODO: Execute kvno command for service
+        # TODO: Capture output and return code
+        # TODO: Return success status
+        pass
+    
+    def test_all_services(self):
+        """
+        Test access to all configured services.
+        
+        Returns:
+            dict: Test results for all services
+        """
+        # TODO: Initialize results dictionary
+        # TODO: Loop through test_services
+        # TODO: Call test_single_service for each
+        # TODO: Add delay between tests
+        # TODO: Return complete results
+        pass
+    
+    def generate_report(self, results):
+        """
+        Generate formatted test report.
+        
+        Args:
+            results: Dictionary of test results
+        """
+        # TODO: Format results as readable report
+        # TODO: Display successful accesses
+        # TODO: Display failed accesses
+        # TODO: Save report to file
+        pass
+
+def main():
+    # TODO: Create ServiceTester instance
+    # TODO: Run test_all_services()
+    # TODO: Generate and display report
+
+if __name__ == "__main__":
+    main()
+Expected Outcomes
+After completing this lab, students should have:
+
+Functional Kerberos test environment with multiple principals
+Working ticket extraction tools that encode cache files
+Ticket injection capabilities for reusing credentials
+Automated framework for ticket operations
+Understanding of ticket-based authentication vulnerabilities
+Knowledge of credential cache structure and manipulation
+Students should be able to:
+
+Extract tickets from credential caches
+Inject tickets into new sessions
+Test service access with reused tickets
+Automate ticket operations with Python
+Troubleshooting Tips
+Issue: "Credentials cache file not found"
+
+Solution: Authenticate first using kinit username@REALM
+Verify cache location: echo $KRB5CCNAME or check /tmp/krb5cc_$(id -u)
+Issue: "Permission denied" when accessing cache
+
+Solution: Ensure cache file has correct permissions (600)
+Run: chmod 600 /tmp/krb5cc_$(id -u)
+Issue: "Clock skew too great" error
+
+Solution: Synchronize system time with KDC
+Run: sudo ntpdate -s time.nist.gov or configure NTP
+Issue: Injected tickets not working
+
+Solution: Verify ticket hasn't expired using klist -v
+Ensure realm and principal names match exactly
+Check that KDC is accessible
+Issue: Service ticket request fails
+
+Solution: Verify service principal exists in KDC
+Check DNS resolution for service hostname
+Ensure TGT is valid and not expired
+Conclusion
+This lab demonstrated Kerberos ticket extraction and reuse techniques. Students learned to:
+
+Configure a Kerberos test environment
+Extract tickets from credential caches
+Manipulate and inject tickets for authentication
+Automate ticket operations with Python
+Test service access using reused credentials
+Security Implications: Ticket theft is a serious attack vector. Organizations should:
+
+Implement credential guard and protected processes
+Monitor for unusual ticket requests
+Use short ticket lifetimes
+Enable audit logging for authentication events
+Implement network segmentation
+Defensive Measures:
+
+Enable AES encryption for Kerberos
+Implement Protected Users security group
+Use Privileged Access Workstations (PAWs)
+Monitor for Pass-the-Ticket attacks
+Regularly rotate service account passwords
+Next Steps: Explore advanced topics like Golden Ticket attacks, Silver Ticket creation, and Kerberos delegation abuse. Study detection mechanisms and SIEM rules for identifying ticket-based attacks.
