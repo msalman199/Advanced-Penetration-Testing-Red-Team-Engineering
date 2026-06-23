@@ -1,0 +1,500 @@
+Pivot Using SSH Tunnels and Port Forwarding
+Objectives
+By the end of this lab, students will be able to:
+
+Configure and implement local, remote, and dynamic SSH port forwarding
+Create SOCKS proxies for network pivoting scenarios
+Use SSH tunnels to access internal network services through compromised hosts
+Automate tunnel management using Python scripts
+Apply pivoting techniques in penetration testing contexts
+Prerequisites
+Basic Linux command line proficiency
+Understanding of TCP/IP networking and port concepts
+Familiarity with SSH authentication methods
+Basic Python programming knowledge
+Understanding of penetration testing methodology
+Lab Environment
+Al Nafi Cloud Machine Setup: This lab runs on a single Linux-based cloud machine. Click Start Lab to access your pre-configured Ubuntu 20.04 environment with OpenSSH, Python 3.8+, and necessary tools pre-installed.
+
+Task 1: Configure SSH Local Port Forwarding
+Step 1: Set Up Test Environment
+# Update and install required packages
+sudo apt update && sudo apt install -y openssh-server openssh-client python3 python3-pip netcat nmap
+
+# Create test users
+sudo useradd -m -s /bin/bash pivot_user
+echo "pivot_user:pivot123" | sudo chpasswd
+
+# Generate SSH key for passwordless authentication
+sudo -u pivot_user ssh-keygen -t rsa -b 2048 -f /home/pivot_user/.ssh/id_rsa -N ""
+sudo -u pivot_user cat /home/pivot_user/.ssh/id_rsa.pub >> /home/pivot_user/.ssh/authorized_keys
+
+# Start SSH service
+sudo systemctl start ssh
+sudo systemctl enable ssh
+
+# Verify SSH is running
+sudo systemctl status ssh | grep Active
+Step 2: Create Target Service
+# Start a web server on port 8080 as target service
+python3 -m http.server 8080 --directory /tmp &
+
+# Verify service is running
+netstat -tlnp | grep 8080
+
+# Test direct access
+curl -I http://localhost:8080
+Step 3: Establish Local Port Forwarding
+# Create local port forwarding tunnel
+# Syntax: ssh -L [local_port]:[target_host]:[target_port] [user]@[ssh_server]
+ssh -f -N -L 9090:localhost:8080 pivot_user@localhost
+
+# Verify tunnel is active
+ps aux | grep "ssh.*-L" | grep -v grep
+netstat -tlnp | grep 9090
+
+# Test access through tunnel
+curl -I http://localhost:9090
+Step 4: Create Python Script to Test Local Forwarding
+Create ~/test_local_forward.py:
+
+#!/usr/bin/env python3
+import socket
+import subprocess
+import time
+
+def test_local_port_forward(original_port, forwarded_port):
+    """
+    Test local port forwarding functionality.
+    
+    Args:
+        original_port: The original service port
+        forwarded_port: The forwarded local port
+    
+    TODO: Implement port connectivity test
+    TODO: Compare responses from both ports
+    TODO: Print test results
+    """
+    pass
+
+def create_tunnel(local_port, remote_host, remote_port, ssh_user, ssh_host):
+    """
+    Create SSH local port forwarding tunnel.
+    
+    Args:
+        local_port: Local port to bind
+        remote_host: Target host through SSH server
+        remote_port: Target port on remote host
+        ssh_user: SSH username
+        ssh_host: SSH server hostname
+    
+    Returns:
+        subprocess.Popen object or None
+    
+    TODO: Build SSH command with proper arguments
+    TODO: Execute command and return process handle
+    TODO: Add error handling
+    """
+    pass
+
+if __name__ == "__main__":
+    # TODO: Test the tunnel functionality
+    pass
+Task 2: Implement Dynamic Port Forwarding (SOCKS Proxy)
+Step 1: Create SOCKS Proxy Tunnel
+# Create dynamic port forwarding (SOCKS5 proxy)
+# Syntax: ssh -D [local_port] [user]@[ssh_server]
+ssh -f -N -D 1080 pivot_user@localhost
+
+# Verify SOCKS proxy is running
+netstat -tlnp | grep 1080
+ps aux | grep "ssh.*-D" | grep -v grep
+Step 2: Configure ProxyChains
+# Install proxychains
+sudo apt install -y proxychains4
+
+# Configure proxychains for SOCKS5
+sudo tee /etc/proxychains4.conf > /dev/null << 'EOF'
+strict_chain
+proxy_dns
+tcp_read_time_out 15000
+tcp_connect_time_out 8000
+
+[ProxyList]
+socks5 127.0.0.1 1080
+EOF
+
+# Test proxychains with network scan
+proxychains4 nc -zv localhost 22
+proxychains4 nmap -sT -Pn localhost -p 22,80,8080
+Step 3: Create SOCKS Proxy Scanner
+Create ~/socks_scanner.py:
+
+#!/usr/bin/env python3
+import socket
+import socks
+from concurrent.futures import ThreadPoolExecutor
+
+class SOCKSScanner:
+    def __init__(self, proxy_host='127.0.0.1', proxy_port=1080):
+        """
+        Initialize SOCKS proxy scanner.
+        
+        Args:
+            proxy_host: SOCKS proxy hostname
+            proxy_port: SOCKS proxy port
+        """
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
+        
+    def configure_socks(self):
+        """
+        Configure socket to use SOCKS proxy.
+        
+        TODO: Set default SOCKS5 proxy using socks module
+        TODO: Replace default socket with socksocket
+        """
+        pass
+    
+    def reset_socket(self):
+        """
+        Reset socket to default behavior.
+        
+        TODO: Restore original socket behavior
+        """
+        pass
+    
+    def scan_port(self, host, port, timeout=3):
+        """
+        Scan single port through SOCKS proxy.
+        
+        Args:
+            host: Target hostname/IP
+            port: Target port
+            timeout: Connection timeout
+        
+        Returns:
+            True if port is open, False otherwise
+        
+        TODO: Create socket connection through proxy
+        TODO: Test port connectivity
+        TODO: Return result
+        """
+        pass
+    
+    def scan_ports(self, host, ports):
+        """
+        Scan multiple ports concurrently.
+        
+        Args:
+            host: Target hostname/IP
+            ports: List of ports to scan
+        
+        Returns:
+            List of open ports
+        
+        TODO: Use ThreadPoolExecutor for concurrent scanning
+        TODO: Collect and return open ports
+        """
+        pass
+
+if __name__ == "__main__":
+    # TODO: Initialize scanner
+    # TODO: Define target and port list
+    # TODO: Execute scan and display results
+    pass
+Install required module:
+
+pip3 install pysocks
+Task 3: Configure Remote Port Forwarding
+Step 1: Create Local Service
+# Create simple TCP service on port 7777
+python3 << 'EOF' &
+import socket
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(('127.0.0.1', 7777))
+server.listen(5)
+print("Service listening on port 7777")
+while True:
+    conn, addr = server.accept()
+    conn.send(b'Hello from local service!\n')
+    conn.close()
+EOF
+
+# Verify service is running
+netstat -tlnp | grep 7777
+Step 2: Establish Remote Port Forwarding
+# Create remote port forwarding tunnel
+# Syntax: ssh -R [remote_port]:[local_host]:[local_port] [user]@[ssh_server]
+ssh -f -N -R 8888:localhost:7777 pivot_user@localhost
+
+# Verify tunnel
+ps aux | grep "ssh.*-R" | grep -v grep
+
+# Test remote forwarded port
+nc localhost 8888
+Step 3: Create Remote Forward Manager
+Create ~/remote_forward_manager.py:
+
+#!/usr/bin/env python3
+import subprocess
+import socket
+import time
+
+class RemoteForwardManager:
+    def __init__(self):
+        self.tunnels = {}
+        
+    def create_remote_forward(self, remote_port, local_host, local_port, 
+                             ssh_user, ssh_host):
+        """
+        Create remote port forwarding tunnel.
+        
+        Args:
+            remote_port: Port on SSH server to bind
+            local_host: Local service hostname
+            local_port: Local service port
+            ssh_user: SSH username
+            ssh_host: SSH server hostname
+        
+        Returns:
+            Process handle or None
+        
+        TODO: Build SSH command with -R flag
+        TODO: Execute and track process
+        TODO: Verify tunnel establishment
+        """
+        pass
+    
+    def test_remote_port(self, host, port):
+        """
+        Test if remote forwarded port is accessible.
+        
+        Args:
+            host: Hostname to test
+            port: Port to test
+        
+        Returns:
+            True if accessible, False otherwise
+        
+        TODO: Implement port connectivity test
+        """
+        pass
+    
+    def cleanup(self):
+        """
+        Stop all remote forwarding tunnels.
+        
+        TODO: Terminate all tracked processes
+        TODO: Kill remaining SSH processes
+        """
+        pass
+
+if __name__ == "__main__":
+    # TODO: Create manager instance
+    # TODO: Set up remote forward
+    # TODO: Test and verify
+    pass
+Task 4: Automate Tunnel Management
+Step 1: Create Tunnel Configuration
+Create ~/tunnel_config.json:
+
+{
+  "tunnels": [
+    {
+      "name": "web_tunnel",
+      "type": "local",
+      "local_port": 8090,
+      "remote_host": "localhost",
+      "remote_port": 8080,
+      "ssh_user": "pivot_user",
+      "ssh_host": "localhost"
+    },
+    {
+      "name": "socks_proxy",
+      "type": "dynamic",
+      "local_port": 1081,
+      "ssh_user": "pivot_user",
+      "ssh_host": "localhost"
+    }
+  ]
+}
+Step 2: Build Automated Tunnel Manager
+Create ~/tunnel_manager.py:
+
+#!/usr/bin/env python3
+import subprocess
+import json
+import socket
+import time
+import signal
+import sys
+
+class TunnelManager:
+    def __init__(self, config_file='tunnel_config.json'):
+        """
+        Initialize tunnel manager.
+        
+        Args:
+            config_file: Path to JSON configuration file
+        """
+        self.config_file = config_file
+        self.tunnels = {}
+        self.processes = {}
+        
+    def load_config(self):
+        """
+        Load tunnel configuration from JSON file.
+        
+        Returns:
+            List of tunnel configurations
+        
+        TODO: Read and parse JSON configuration
+        TODO: Handle file not found errors
+        TODO: Return tunnel list
+        """
+        pass
+    
+    def create_local_tunnel(self, config):
+        """
+        Create local port forwarding tunnel.
+        
+        Args:
+            config: Tunnel configuration dictionary
+        
+        Returns:
+            True if successful, False otherwise
+        
+        TODO: Build SSH command for local forwarding
+        TODO: Execute command and track process
+        TODO: Verify tunnel is working
+        """
+        pass
+    
+    def create_dynamic_tunnel(self, config):
+        """
+        Create dynamic port forwarding tunnel.
+        
+        Args:
+            config: Tunnel configuration dictionary
+        
+        Returns:
+            True if successful, False otherwise
+        
+        TODO: Build SSH command for dynamic forwarding
+        TODO: Execute and track process
+        """
+        pass
+    
+    def test_port(self, host, port, timeout=3):
+        """
+        Test if port is accessible.
+        
+        Args:
+            host: Target hostname
+            port: Target port
+            timeout: Connection timeout
+        
+        Returns:
+            True if accessible, False otherwise
+        
+        TODO: Implement socket connection test
+        """
+        pass
+    
+    def start_all_tunnels(self):
+        """
+        Start all configured tunnels.
+        
+        TODO: Load configuration
+        TODO: Create each tunnel based on type
+        TODO: Track active tunnels
+        """
+        pass
+    
+    def stop_tunnel(self, tunnel_name):
+        """
+        Stop specific tunnel.
+        
+        Args:
+            tunnel_name: Name of tunnel to stop
+        
+        TODO: Terminate process for named tunnel
+        TODO: Remove from tracking
+        """
+        pass
+    
+    def cleanup_all(self):
+        """
+        Stop all tunnels and cleanup.
+        
+        TODO: Stop all tracked processes
+        TODO: Kill remaining SSH processes
+        """
+        pass
+    
+    def list_tunnels(self):
+        """
+        Display all active tunnels.
+        
+        TODO: Print tunnel status and details
+        """
+        pass
+
+def main():
+    """
+    Main function to run tunnel manager.
+    
+    TODO: Initialize manager
+    TODO: Start tunnels from config
+    TODO: Display status
+    TODO: Handle cleanup on exit
+    """
+    pass
+
+if __name__ == "__main__":
+    main()
+Step 3: Test Automated Manager
+# Make script executable
+chmod +x ~/tunnel_manager.py
+
+# Run tunnel manager
+python3 ~/tunnel_manager.py
+
+# Verify tunnels are active
+netstat -tlnp | grep -E "8090|1081"
+ps aux | grep ssh | grep -v grep
+
+# Test each tunnel
+curl -I http://localhost:8090
+nc -zv localhost 1081
+Expected Outcomes
+After completing this lab, you should have:
+
+Working local port forwarding tunnels accessing services through SSH
+Functional SOCKS proxy for dynamic port forwarding
+Remote port forwarding exposing local services remotely
+Automated Python scripts managing multiple SSH tunnels
+Understanding of pivoting techniques for penetration testing
+Ability to chain tunnels for multi-hop network access
+Troubleshooting Tips
+Tunnel Connection Fails:
+
+Verify SSH service is running: sudo systemctl status ssh
+Check SSH key permissions: chmod 600 ~/.ssh/id_rsa
+Ensure target service is accessible: netstat -tlnp | grep [port]
+Review SSH logs: sudo tail -f /var/log/auth.log
+Port Already in Use:
+
+Find process using port: sudo lsof -i :[port]
+Kill existing tunnel: pkill -f "ssh.*-[LRD].*[port]"
+Choose different local port for forwarding
+SOCKS Proxy Not Working:
+
+Verify proxy is listening: netstat -tlnp | grep 1080
+Check proxychains configuration: cat /etc/proxychains4.conf
+Test with simple command: proxychains4 curl http://localhost
+Ensure PySocks module is installed: pip3 install pysocks
+Conclusion
+This lab demonstrated SSH tunneling techniques essential for network pivoting in penetration testing. You configured local, remote, and dynamic port forwarding to access internal network services through compromised hosts. The automated tunnel manager provides a framework for managing complex pivoting scenarios. These skills are critical for lateral movement and accessing segmented networks during security assessments. Practice these techniques in authorized environments to develop proficiency in advanced penetration testing methodologies.
