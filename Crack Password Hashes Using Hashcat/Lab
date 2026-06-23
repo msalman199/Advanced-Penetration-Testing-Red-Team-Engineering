@@ -1,0 +1,413 @@
+Crack Password Hashes Using Hashcat & John
+Objectives
+By the end of this lab, students will be able to:
+
+Identify and analyze different password hash formats (MD5, SHA1, SHA256)
+Use Hashcat to perform dictionary and brute-force attacks on password hashes
+Implement John the Ripper for password cracking operations
+Create Python automation scripts for hash cracking workflows
+Compare effectiveness of different cracking tools and techniques
+Prerequisites
+Before starting this lab, students should have:
+
+Basic Linux command line proficiency
+Understanding of cryptographic hash functions
+Fundamental Python programming skills
+Lab Environment
+Al Nafi provides ready-to-use Linux-based cloud machines for this lab. Simply click Start Lab to access your pre-configured environment with Hashcat and John the Ripper pre-installed.
+
+Task 1: Crack Hashes with Hashcat
+Step 1.1: Setup Working Environment
+Create the lab directory structure:
+
+mkdir -p ~/hash_lab/{hashes,wordlists,results}
+cd ~/hash_lab
+
+# Verify Hashcat installation
+hashcat --version
+Step 1.2: Generate Test Hashes
+Create sample hash files for testing:
+
+# Generate MD5 hashes
+echo -n "password123" | md5sum | cut -d' ' -f1 > hashes/md5.txt
+echo -n "admin" | md5sum | cut -d' ' -f1 >> hashes/md5.txt
+echo -n "qwerty" | md5sum | cut -d' ' -f1 >> hashes/md5.txt
+
+# Generate SHA256 hashes
+echo -n "password123" | sha256sum | cut -d' ' -f1 > hashes/sha256.txt
+echo -n "welcome" | sha256sum | cut -d' ' -f1 >> hashes/sha256.txt
+
+# Create basic wordlist
+cat > wordlists/common.txt << EOF
+password
+password123
+admin
+qwerty
+welcome
+123456
+letmein
+EOF
+Step 1.3: Dictionary Attack with Hashcat
+Crack MD5 hashes using dictionary attack:
+
+# Basic dictionary attack (mode 0 = MD5)
+hashcat -m 0 -a 0 hashes/md5.txt wordlists/common.txt
+
+# Show cracked passwords
+hashcat -m 0 hashes/md5.txt --show
+
+# Save results
+hashcat -m 0 hashes/md5.txt --show > results/md5_cracked.txt
+Hashcat Mode Reference:
+
+-m 0 = MD5
+-m 100 = SHA1
+-m 1400 = SHA256
+-a 0 = Dictionary attack
+-a 3 = Brute-force attack
+Step 1.4: Brute-Force Attack
+Perform mask-based brute-force attack:
+
+# Create simple numeric hash
+echo -n "1234" | md5sum | cut -d' ' -f1 > hashes/numeric.txt
+
+# Brute-force 4-digit numbers
+hashcat -m 0 -a 3 hashes/numeric.txt ?d?d?d?d
+
+# Brute-force lowercase + digits (6 chars)
+hashcat -m 0 -a 3 hashes/md5.txt ?l?l?l?d?d?d
+Mask Characters:
+
+?l = lowercase (a-z)
+?u = uppercase (A-Z)
+?d = digits (0-9)
+?s = special characters
+Step 1.5: Rule-Based Attack
+Apply rules to enhance dictionary attacks:
+
+# Use built-in rules
+hashcat -m 0 -a 0 hashes/md5.txt wordlists/common.txt -r /usr/share/hashcat/rules/best64.rule
+
+# Show all cracked results
+hashcat -m 0 hashes/md5.txt --show
+Task 2: Use John the Ripper
+Step 2.1: Prepare Hash Files
+Create hash files compatible with John:
+
+# Copy hashes for John
+cp hashes/md5.txt hashes/john_md5.txt
+
+# Check John version and formats
+john --version
+john --list=formats | grep -i raw
+Step 2.2: Dictionary Attack with John
+Run John the Ripper with wordlist:
+
+# Basic dictionary attack
+john --format=Raw-MD5 --wordlist=wordlists/common.txt hashes/john_md5.txt
+
+# Show cracked passwords
+john --show --format=Raw-MD5 hashes/john_md5.txt
+
+# Save results
+john --show --format=Raw-MD5 hashes/john_md5.txt > results/john_results.txt
+Step 2.3: Rule-Based Cracking
+Apply John's rules for password mutations:
+
+# Use Wordlist rules
+john --format=Raw-MD5 --wordlist=wordlists/common.txt --rules=Wordlist hashes/john_md5.txt
+
+# Use all available rules
+john --format=Raw-MD5 --wordlist=wordlists/common.txt --rules hashes/john_md5.txt
+
+# Display results
+john --show --format=Raw-MD5 hashes/john_md5.txt
+Step 2.4: Incremental Mode
+Use John's brute-force mode (limited time):
+
+# Create simple hash for demo
+echo -n "abc" | md5sum | cut -d' ' -f1 > hashes/simple.txt
+
+# Run incremental mode (60 second timeout)
+timeout 60 john --format=Raw-MD5 --incremental=Lower hashes/simple.txt
+
+# Check results
+john --show --format=Raw-MD5 hashes/simple.txt
+Task 3: Automate with Python
+Step 3.1: Create Basic Hash Cracker Script
+Create a Python script template for hash cracking automation:
+
+cat > hash_cracker.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Automated Hash Cracking Tool
+Students: Complete the TODO sections
+"""
+
+import subprocess
+import hashlib
+from pathlib import Path
+
+class HashCracker:
+    def __init__(self, work_dir="~/hash_lab"):
+        self.work_dir = Path(work_dir).expanduser()
+        self.results_dir = self.work_dir / "results"
+        self.hashes_dir = self.work_dir / "hashes"
+        
+    def generate_hash(self, password, hash_type="md5"):
+        """
+        Generate hash for given password
+        
+        Args:
+            password: Plain text password
+            hash_type: Type of hash (md5, sha1, sha256)
+        
+        Returns:
+            Hexadecimal hash string
+        """
+        # TODO: Implement hash generation for md5, sha1, sha256
+        # Use hashlib library
+        pass
+    
+    def create_hash_file(self, passwords, hash_type="md5"):
+        """
+        Create hash file from password list
+        
+        Args:
+            passwords: List of passwords
+            hash_type: Hash algorithm to use
+        
+        Returns:
+            Path to created hash file
+        """
+        # TODO: Generate hashes for all passwords
+        # TODO: Write hashes to file in hashes directory
+        # TODO: Return the file path
+        pass
+    
+    def run_hashcat(self, hash_file, wordlist, mode=0):
+        """
+        Execute Hashcat and return results
+        
+        Args:
+            hash_file: Path to hash file
+            wordlist: Path to wordlist
+            mode: Hashcat mode (0=MD5, 100=SHA1, 1400=SHA256)
+        
+        Returns:
+            Dictionary with cracked passwords
+        """
+        # TODO: Build hashcat command
+        # TODO: Execute using subprocess
+        # TODO: Parse output and return results
+        pass
+    
+    def run_john(self, hash_file, wordlist, format_type="Raw-MD5"):
+        """
+        Execute John the Ripper and return results
+        
+        Args:
+            hash_file: Path to hash file
+            wordlist: Path to wordlist
+            format_type: John format string
+        
+        Returns:
+            Dictionary with cracked passwords
+        """
+        # TODO: Run john cracking command
+        # TODO: Run john --show to get results
+        # TODO: Parse and return cracked passwords
+        pass
+    
+    def compare_tools(self, passwords, wordlist):
+        """
+        Compare Hashcat vs John the Ripper performance
+        
+        Args:
+            passwords: List of test passwords
+            wordlist: Path to wordlist file
+        
+        Returns:
+            Comparison statistics
+        """
+        # TODO: Create hash file from passwords
+        # TODO: Run both Hashcat and John
+        # TODO: Measure execution time for each
+        # TODO: Count cracked passwords
+        # TODO: Return comparison results
+        pass
+
+def main():
+    """Main execution function"""
+    cracker = HashCracker()
+    
+    # TODO: Define test passwords
+    # TODO: Create wordlist if needed
+    # TODO: Run comparison
+    # TODO: Display results
+    
+    print("Hash cracking automation complete")
+
+if __name__ == "__main__":
+    main()
+EOF
+
+chmod +x hash_cracker.py
+Step 3.2: Create Hash Analysis Script
+Build a script to analyze hash types and strength:
+
+cat > hash_analyzer.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Hash Analysis Tool
+Students: Implement the analysis functions
+"""
+
+import re
+from pathlib import Path
+
+class HashAnalyzer:
+    def __init__(self):
+        self.hash_patterns = {
+            'md5': r'^[a-f0-9]{32}$',
+            'sha1': r'^[a-f0-9]{40}$',
+            'sha256': r'^[a-f0-9]{64}$'
+        }
+    
+    def identify_hash_type(self, hash_string):
+        """
+        Identify hash type based on pattern
+        
+        Args:
+            hash_string: Hash to identify
+        
+        Returns:
+            Hash type name or 'unknown'
+        """
+        # TODO: Check hash against each pattern
+        # TODO: Return matching hash type
+        pass
+    
+    def analyze_hash_file(self, file_path):
+        """
+        Analyze all hashes in a file
+        
+        Args:
+            file_path: Path to hash file
+        
+        Returns:
+            Dictionary with analysis results
+        """
+        # TODO: Read hashes from file
+        # TODO: Identify type of each hash
+        # TODO: Count hash types
+        # TODO: Return statistics
+        pass
+    
+    def estimate_crack_time(self, hash_type, password_length, charset_size):
+        """
+        Estimate brute-force cracking time
+        
+        Args:
+            hash_type: Type of hash algorithm
+            password_length: Length of password
+            charset_size: Size of character set
+        
+        Returns:
+            Estimated time in seconds
+        """
+        # TODO: Calculate total combinations
+        # TODO: Estimate hashes per second based on type
+        # TODO: Calculate time = combinations / hash_rate
+        pass
+    
+    def generate_report(self, hash_file):
+        """
+        Generate comprehensive analysis report
+        
+        Args:
+            hash_file: Path to hash file
+        
+        Returns:
+            Formatted report string
+        """
+        # TODO: Analyze hash file
+        # TODO: Format results as report
+        # TODO: Include recommendations
+        pass
+
+def main():
+    analyzer = HashAnalyzer()
+    
+    # TODO: Analyze hash files from lab
+    # TODO: Generate reports
+    # TODO: Display findings
+    
+    print("Hash analysis complete")
+
+if __name__ == "__main__":
+    main()
+EOF
+
+chmod +x hash_analyzer.py
+Step 3.3: Test Your Scripts
+Run and verify your automation scripts:
+
+# Test the hash cracker
+python3 hash_cracker.py
+
+# Test the hash analyzer
+python3 hash_analyzer.py
+
+# Review generated results
+ls -lh results/
+cat results/*.txt
+Expected Outcomes
+After completing this lab, you should have:
+
+Successfully cracked multiple hash types using Hashcat
+Used John the Ripper with various attack modes
+Created functional Python automation scripts
+Generated comparison reports between tools
+Understanding of hash cracking techniques and limitations
+Performance Comparison:
+
+Hashcat: GPU-accelerated, faster for large datasets
+John the Ripper: CPU-based, better for complex rules
+Both tools complement each other in real scenarios
+Troubleshooting Tips
+Issue: Hashcat shows "No devices found"
+
+Solution: Use --force flag for CPU-only mode: hashcat --force -m 0 ...
+Issue: John doesn't show cracked passwords
+
+Solution: Ensure correct format specified: john --list=formats to verify
+Check session files: ls ~/.john/
+Issue: Python subprocess timeout
+
+Solution: Increase timeout value or use smaller test datasets
+Add error handling: try/except subprocess.TimeoutExpired
+Issue: Permission denied on scripts
+
+Solution: Make scripts executable: chmod +x script_name.py
+Conclusion
+This lab demonstrated practical password hash cracking techniques using industry-standard tools. You learned to:
+
+Execute dictionary and brute-force attacks with Hashcat
+Leverage John the Ripper's rule-based mutations
+Automate cracking workflows with Python
+Analyze and compare tool effectiveness
+Key Takeaways:
+
+Weak passwords are vulnerable to dictionary attacks
+Hash algorithms alone don't guarantee security
+Salting and key stretching significantly increase crack time
+Automation enables efficient security testing at scale
+Ethical Reminder: These techniques should only be used for authorized security testing, password recovery, or educational purposes. Unauthorized access to systems is illegal.
+
+Next Steps:
+
+Explore advanced Hashcat rules and masks
+Study password salting and bcrypt/scrypt algorithms
+Practice on CTF challenges and authorized platforms
+Research rainbow table attacks and defenses
